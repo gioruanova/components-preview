@@ -2,7 +2,7 @@ import { defineWidget } from '@/tooling/types'
 import { codegen, isEmpty } from './codegen'
 import { Preview } from './Preview'
 import { defaults, schema } from './schema'
-import styles from './styles.css?inline'
+import { styles } from './styles'
 
 export default defineWidget({
   name: 'SEO Block',
@@ -12,7 +12,8 @@ export default defineWidget({
   description: [
     'Displays a two-line title, an optional divider under the title, an optional description, and up to two optional buttons — each independently shown or hidden.',
     'The heading level (`h1`–`h6`) is configurable so the block fits the page outline.',
-    'Each button has its own URL and label.',
+    'Content can be aligned left, center or right; every text element has its own typography.',
+    'Each button (Button 1, Button 2) has its own label and URL. A button without a URL (or label) is not rendered.',
     "If both buttons are hidden, the buttons container itself is omitted (it doesn't render as an empty wrapper).",
     'External button URLs (not matching the site\'s own base URL) automatically get `target="_blank"` and `rel="noopener noreferrer"`, plus an accessible label noting the link opens in a new tab.',
     "If the widget has no data at all, it's removed from the page entirely.",

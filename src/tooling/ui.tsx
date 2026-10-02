@@ -1,4 +1,7 @@
+import type { ReactNode } from 'react'
+import { FlaskConical, Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { Status } from './types'
 
@@ -17,6 +20,28 @@ export function StatusBadge({ status, className }: { status: Status; className?:
   )
 }
 
+/** Small "i" icon that explains something on hover/focus. Safe to place inside other buttons (renders a span). */
+export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          role="img"
+          tabIndex={0}
+          aria-label={label}
+          onClick={(e) => e.stopPropagation()}
+          className="inline-grid size-5 cursor-help place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-brand-blue focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          <Info className="size-3.5" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-72 text-[13px] leading-snug">
+        {children}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 /** Renders `backtick` segments as inline code. */
 export function RichText({ text }: { text: string }) {
   return (
@@ -31,5 +56,16 @@ export function RichText({ text }: { text: string }) {
         ),
       )}
     </>
+  )
+}
+
+/** Marks experimental features. */
+export function TestingPocBadge({ className = '' }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border border-brand-orange/40 bg-brand-orange/10 px-2.5 py-0.5 text-xs font-bold tracking-wide text-[#b4470e] uppercase ${className}`}
+    >
+      <FlaskConical className="size-3.5" /> Testing POC
+    </span>
   )
 }

@@ -8,7 +8,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { cn } from '@/lib/utils'
 import type { Config, FieldDef, LeafField, ListField } from '../types'
+import type { Typography } from '../typography'
+import { InfoTip } from '../ui'
 import { ColorPicker, SliderControl, Stepper } from './controls'
+import type { ButtonStyle } from '../buttons'
+import { ButtonStyleControl } from './ButtonStyleControl'
+import { ImagePicker } from './ImagePicker'
+import { TypographyControl } from './TypographyControl'
 
 type Props<C extends Config> = {
   field: FieldDef<C>
@@ -33,13 +39,16 @@ export function FieldRenderer<C extends Config>({ field, config, onChange }: Pro
   return <Leaf field={field} config={config} onChange={onChange} />
 }
 
-function Row({ id, label, help, children, inline }: { id: string; label: string; help?: string; children: ReactNode; inline?: boolean }) {
+function Row({ id, label, help, tip, children, inline }: { id: string; label: string; help?: string; tip?: string; children: ReactNode; inline?: boolean }) {
   return (
     <div className={cn(inline ? 'flex items-center justify-between gap-3' : 'space-y-1.5')}>
       <div className="min-w-0">
-        <Label htmlFor={id} className="text-[13px] font-medium">
-          {label}
-        </Label>
+        <div className="flex items-center gap-1">
+          <Label htmlFor={id} className="text-[13px] font-medium">
+            {label}
+          </Label>
+          {tip && <InfoTip label={tip}>{tip}</InfoTip>}
+        </div>
         {help && <p className="mt-0.5 text-xs text-muted-foreground">{help}</p>}
       </div>
       {children}
@@ -55,19 +64,19 @@ function Leaf<C extends Config>({ field, config, onChange }: { field: LeafField<
   switch (field.type) {
     case 'text':
       return (
-        <Row id={id} label={field.label} help={field.help}>
+        <Row id={id} label={field.label} help={field.help} tip={field.tip}>
           <Input id={id} value={String(value ?? '')} placeholder={field.placeholder} onChange={(e) => set(e.target.value)} />
         </Row>
       )
     case 'textarea':
       return (
-        <Row id={id} label={field.label} help={field.help}>
+        <Row id={id} label={field.label} help={field.help} tip={field.tip}>
           <Textarea id={id} rows={field.rows ?? 3} value={String(value ?? '')} onChange={(e) => set(e.target.value)} />
         </Row>
       )
     case 'switch':
       return (
-        <Row id={id} label={field.label} help={field.hint ?? field.help} inline>
+        <Row id={id} label={field.label} help={field.hint ?? field.help} tip={field.tip} inline>
           <Switch id={id} checked={Boolean(value)} onCheckedChange={set} />
         </Row>
       )
@@ -94,7 +103,7 @@ function Leaf<C extends Config>({ field, config, onChange }: { field: LeafField<
     }
     case 'select':
       return (
-        <Row id={id} label={field.label} help={field.help}>
+        <Row id={id} label={field.label} help={field.help} tip={field.tip}>
           <Select value={String(value)} onValueChange={set}>
             <SelectTrigger id={id} className="w-full bg-card">
               <SelectValue />
@@ -111,7 +120,7 @@ function Leaf<C extends Config>({ field, config, onChange }: { field: LeafField<
       )
     case 'segmented':
       return (
-        <Row id={id} label={field.label} help={field.help}>
+        <Row id={id} label={field.label} help={field.help} tip={field.tip}>
           <ToggleGroup
             id={id}
             type="single"
@@ -130,20 +139,34 @@ function Leaf<C extends Config>({ field, config, onChange }: { field: LeafField<
       )
     case 'color':
       return (
-        <Row id={id} label={field.label} help={field.help}>
-          <ColorPicker id={id} value={String(value)} onChange={set} />
+        <Row id={id} label={field.label} help={field.help} tip={field.tip}>
+          <ColorPicker id={id} value={String(value)} onChange={set} alpha={!field.solid} />
         </Row>
       )
     case 'slider':
       return (
-        <Row id={id} label={field.label} help={field.help}>
+        <Row id={id} label={field.label} help={field.help} tip={field.tip}>
           <SliderControl id={id} value={Number(value)} onChange={set} min={field.min} max={field.max} step={field.step} unit={field.unit} />
         </Row>
       )
     case 'stepper':
       return (
-        <Row id={id} label={field.label} help={field.help} inline>
+        <Row id={id} label={field.label} help={field.help} tip={field.tip} inline>
           <Stepper id={id} value={Number(value)} onChange={set} min={field.min} max={field.max} />
+        </Row>
+      )
+    case 'typography':
+      return (
+        <Row id={id} label={field.label} help={field.help} tip={field.tip}>
+          <TypographyControl id={id} value={value as Typography} onChange={set} />
+        </Row>
+      )
+    case 'buttonStyle':
+      return <ButtonStyleControl id={id} label={field.label} value={value as ButtonStyle} onChange={set} />
+    case 'image':
+      return (
+        <Row id={id} label={field.label} help={field.help} tip={field.tip}>
+          <ImagePicker id={id} value={String(value ?? '')} onChange={set} />
         </Row>
       )
     case 'list':
@@ -165,7 +188,7 @@ function ListEditor<C extends Config>({ field, config, onChange }: { field: List
   return (
     <div className="space-y-1.5">
       <Label className="text-[13px] font-medium">{field.label}</Label>
-      <Accordion type="multiple" className="rounded-lg border bg-card">
+      <Accordion type="single" collapsible className="rounded-lg border bg-card">
         {visible.map((item, i) => (
           <AccordionItem key={i} value={String(i)} className="px-3">
             <AccordionTrigger className="py-2.5 text-sm hover:no-underline">
@@ -179,7 +202,7 @@ function ListEditor<C extends Config>({ field, config, onChange }: { field: List
                 const id = `field-${field.key}-${i}-${f.key}`
                 const Control = f.type === 'textarea' ? Textarea : Input
                 return (
-                  <Row key={f.key} id={id} label={f.label}>
+                  <Row key={f.key} id={id} label={f.label} tip={f.tip}>
                     <Control
                       id={id}
                       value={String(item[f.key] ?? '')}

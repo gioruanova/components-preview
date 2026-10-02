@@ -1,17 +1,18 @@
-import { ArrowRight, ChevronRight } from 'lucide-react'
-import { Link, Navigate, useParams } from 'react-router'
+import { ArrowRight, ChevronRight, Hourglass } from 'lucide-react'
+import { Link, useParams } from 'react-router'
 import { ComponentPage } from '@/tooling/ComponentPage'
-import { categories, findCategory, findWidget } from '@/tooling/registry'
+import { findCategory, findUpcoming, findWidget, type RegisteredCategory } from '@/tooling/registry'
 import { StatusBadge } from '@/tooling/ui'
-
-export function HomeRedirect() {
-  const first = categories[0]?.widgets[0]
-  return first ? <Navigate to={first.path} replace /> : <NotFound />
-}
+import { ComingSoon } from './ComingSoon'
 
 export function CategoryPage() {
   const category = findCategory(useParams().category)
   if (!category) return <NotFound />
+
+  // A family with nothing in it yet is itself "coming soon"
+  if (!category.widgets.length && !category.upcomingWidgets.length) {
+    return <ComingSoon category={category} name={category.name} summary={category.description} />
+  }
 
   return (
     <div className="space-y-6">
@@ -28,8 +29,21 @@ export function CategoryPage() {
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{w.summary}</p>
             <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-blue">
-              Open simulator <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              Open live preview <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </span>
+          </Link>
+        ))}
+        {category.upcomingWidgets.map((w) => (
+          <Link
+            key={w.slug}
+            to={w.path}
+            className="group rounded-xl border border-dashed bg-card/60 p-5 transition hover:border-brand-orange/50 hover:bg-card"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-semibold text-muted-foreground">{w.name}</h2>
+              <SoonBadge />
+            </div>
+            {w.summary && <p className="mt-2 text-sm text-muted-foreground">{w.summary}</p>}
           </Link>
         ))}
       </div>
@@ -37,22 +51,37 @@ export function CategoryPage() {
   )
 }
 
+export function SoonBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-brand-orange/10 px-2 py-0.5 text-[11px] font-semibold text-[#b4470e]">
+      <Hourglass className="size-3" /> Soon
+    </span>
+  )
+}
+
+function Breadcrumb({ category, name }: { category: RegisteredCategory; name: string }) {
+  return (
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm text-muted-foreground">
+      <Link to={category.path} className="hover:text-foreground">
+        {category.name}
+      </Link>
+      <ChevronRight className="size-3.5" />
+      <span className="text-foreground">{name}</span>
+    </nav>
+  )
+}
+
 export function WidgetPage() {
   const { category: categorySlug, component } = useParams()
   const category = findCategory(categorySlug)
   const widget = findWidget(categorySlug, component)
-  if (!category || !widget) return <NotFound />
+  const upcoming = findUpcoming(categorySlug, component)
+  if (!category || (!widget && !upcoming)) return <NotFound />
 
   return (
     <div className="space-y-4">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm text-muted-foreground">
-        <Link to={category.path} className="hover:text-foreground">
-          {category.name}
-        </Link>
-        <ChevronRight className="size-3.5" />
-        <span className="text-foreground">{widget.name}</span>
-      </nav>
-      <ComponentPage key={widget.path} widget={widget} />
+      <Breadcrumb category={category} name={(widget ?? upcoming)!.name} />
+      {widget ? <ComponentPage key={widget.path} widget={widget} /> : <ComingSoon category={category} name={upcoming!.name} summary={upcoming!.summary} />}
     </div>
   )
 }

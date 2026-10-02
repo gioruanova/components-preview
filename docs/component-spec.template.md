@@ -22,6 +22,12 @@ Paste the widget's real HTML with `${Placeholders}`.
 
 ```
 
+## 3b. Real CSS (optional, recommended)
+Paste the live widget's CSS, or link the page it runs on. Its values become the default styles.
+```css
+
+```
+
 ## 4. Script
 Paste the real script (jQuery etc.). Note any helper it uses (e.g. `updateLinksAttributes`).
 ```js
@@ -36,13 +42,15 @@ Shape + realistic default values (these become the simulator defaults).
 
 ## 6. Config options
 One row per option. Section: **A** Content · **B** Widget configuration · **C** Styles.
-Field type: text · textarea · switch · switchText · select · segmented · color · slider · stepper · group · list.
+Field type: text · textarea · switch · switchText · select · segmented · color · slider · stepper · typography · image · group · list.
+Every text element (not buttons) needs a `typography` row. Don't list container options: "Uses container" (width, max width, inner width, padding, background color/image) is added to every component automatically.
 
 | Section | Label | Key | Field type | Default | Options / range | Visible when | Notes |
 |---|---|---|---|---|---|---|---|
 | B | Widget ID | widgetId | text | `customX` | | | |
 | A | | | | | | | |
 | C | | | | | | | |
+| C | Title typography | titleFont | typography | Poppins 32 / 700 / #313841 | | | |
 
 ## 7. Rendering rules
 Conditional logic the preview *and* codegen must follow (e.g. "button only if the item has a URL", "container omitted when empty").

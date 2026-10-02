@@ -5,10 +5,14 @@ export function lines(...parts: (string | false | null | undefined)[]): string {
   return parts.filter((p): p is string => typeof p === 'string').join('\n')
 }
 
-export function isExternalUrl(url: string, siteBaseUrl: string): boolean {
+/** Domain the page is served from — detected automatically, so it works on any hosting. */
+export const currentOrigin = () => (typeof window !== 'undefined' ? window.location.origin : 'https://example.com')
+
+/** True when `url` points to another domain than the current page. `base` is only for tests. */
+export function isExternalUrl(url: string, base = currentOrigin()): boolean {
   if (!url) return false
   try {
-    return new URL(url, siteBaseUrl).origin !== new URL(siteBaseUrl).origin
+    return new URL(url, base).origin !== new URL(base).origin
   } catch {
     return false
   }
@@ -18,8 +22,8 @@ export function isExternalUrl(url: string, siteBaseUrl: string): boolean {
  * Port of the platform's `updateLinksAttributes`: external links open in a new tab
  * with `rel="noopener noreferrer"` and an accessible label.
  */
-export function linkAttributes(url: string, label: string, siteBaseUrl: string) {
-  return isExternalUrl(url, siteBaseUrl)
+export function linkAttributes(url: string, label: string) {
+  return isExternalUrl(url)
     ? { target: '_blank', rel: 'noopener noreferrer', 'aria-label': `${label} (opens in a new tab)` }
     : {}
 }

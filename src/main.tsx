@@ -10,7 +10,9 @@ import '@fontsource/outfit/900.css'
 import './index.css'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Layout } from './app/Layout'
-import { CategoryPage, HomeRedirect, NotFound, WidgetPage } from './app/pages'
+import { HomePage } from './app/HomePage'
+import { CombinerPage } from './combiner/CombinerPage'
+import { CategoryPage, NotFound, WidgetPage } from './app/pages'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -18,14 +20,16 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
-            <Route index element={<HomeRedirect />} />
+            <Route index element={<HomePage />} />
+            <Route path="combiner" element={<CombinerPage />} />
             <Route path=":category" element={<CategoryPage />} />
             <Route path=":category/:component" element={<WidgetPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>
-      <Toaster position="bottom-right" richColors closeButton={false} duration={1800} />
+      {/* offset keeps toasts above the floating idea button */}
+      <Toaster position="bottom-right" offset={{ bottom: 96, right: 20 }} mobileOffset={{ bottom: 88 }} richColors closeButton={false} duration={2200} />
     </TooltipProvider>
   </StrictMode>,
 )

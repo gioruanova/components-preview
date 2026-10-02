@@ -1,6 +1,6 @@
-# Saffire Component Simulator
+# Components Live Preview (Saffire)
 
-A modern, responsive simulator for Saffire widgets. Each page shows the functional description, the configuration (Content / Widget configuration / Styles), a live preview with Desktop / Tablet / Mobile viewports, and the generated HTML / Script / Data, with a copy button.
+Explore, configure and preview Saffire website widgets live. Each page shows the functional description, the configuration (Content / Widget configuration / Styles, plus an optional container with background), a live preview with Desktop / Tablet / Mobile viewports, and the generated HTML / SCSS / CSS / Script / Data, each with a copy button.
 
 ```bash
 npm install
@@ -8,6 +8,9 @@ npm run dev        # http://localhost:5173
 npm test           # codegen + rendering-rule tests
 npm run build
 ```
+
+## Combiner (Testing POC)
+At `/combiner` you can stack sections (1–3 columns, any container settings), drop any component into them, drag and drop to rearrange, and preview the result on Desktop, Tablet, Mobile or in a resizable popup. The layout is saved in your browser.
 
 ## Adding components
 Components are grouped into **categories** (families). Both are just folders:

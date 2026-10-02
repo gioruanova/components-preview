@@ -1,9 +1,9 @@
 # Component spec — SEO Block
 
 ## 1. Identity
-- **Category:** NEW → name "SEO Block", slug `seo-block`, "Text-led blocks that give a page a crawlable heading, a supporting description and calls to action."
+- **Category:** NEW → name "Text Blocks", slug `text-blocks`, "Text-led blocks that give a page a crawlable heading, a supporting description and calls to action."
 - **Component name:** SEO Block
-- **Component slug:** `seo-block-default`
+- **Component slug:** `seo-block`
 - **Status:** stable
 - **Summary:** Heading, divider, description and up to two call-to-action buttons.
 - **Order in category:** 10
@@ -47,28 +47,40 @@
 ## 6. Config options
 | Section | Label | Key | Field type | Default | Options / range | Visible when |
 |---|---|---|---|---|---|---|
-| A | Title | showTitle | switch | on | | |
 | A | Title line 1 | titleLine1 | text | Join thousands of members | | showTitle |
 | A | Title line 2 | titleLine2 | text | today | | showTitle |
-| A | Description | description / showDescription | switchText | on | multiline | |
-| A | Button 1 / 2 | buttonNShow, buttonNLabel, buttonNUrl | group(switch, text, text) | on | | label/url when shown |
+| A | Description | description | textarea | Get access to… | | showDescription |
+| A | Button 1 / 2 | buttonNLabel, buttonNUrl | group(text, text + URL tip) | | | buttonNShow |
+| B | Show / hide | showTitle, showDivider, showDescription, button1Show, button2Show | switches | all on | | |
 | B | Widget ID | widgetId | text | customSeoBlock | | |
 | B | Heading level | headingLevel | select | h1 | h1–h6 | |
-| B | Title divider | showDivider | switch | on | | showTitle |
-| B | Site base URL | siteBaseUrl | text | https://example.com | | |
-| C | Background color | backgroundColor | color | #f0f0f0 | | |
-| C | Text color | textColor | color | #222222 | | |
-| C | Border radius | borderRadius | slider | 16 | 0–48 px | |
+| C | Content alignment | alignment | segmented | left | left / center / right | |
+| C | Title line 1 | titleFont | typography | Poppins 36 / 700 / 1.2 / #313841 / capitalize | | |
+| C | Title line 2 | title2Font | typography | Poppins 36 / 400 / 1.2 / #313841 / capitalize | | |
+| C | Description | descriptionFont | typography | Poppins 19 / 400 / 1.6 / #313841 | | |
+| C | Width | widthMode / maxWidth | segmented + slider | Max width 920 | Max width (480–1530 px) / 100% | |
+| C | Background color | backgroundColor | color | #eeeeee | | |
+| C | Border radius | borderRadius | slider | 8 | 0–48 px | |
 | C | Border width | borderWidth | slider | 0 | 0–12 px (solid) | |
-| C | Border color | borderColor | color | #007bc7 | | borderWidth > 0 |
+| C | Border color | borderColor | color | #0079c2 | | borderWidth > 0 |
+| C | Divider color | dividerColor | color | #0f294a | | title + divider on |
+| C | Default button color | buttonColor | color | #0079c2 (gradient to #11325d) | | any button on |
+| C | Button 1 / 2 · custom style | button1Style / button2Style | buttonStyle | off (Button 2 preset orange) | | that button on |
+
+Container options are added automatically.
 
 ## 7. Rendering rules
 - Both title lines render inside the heading; line 2 in `<span class="seo-title-line2">`.
 - Divider renders inside the heading, only with the title.
-- Buttons container omitted when both buttons are hidden.
+- A button renders only when shown **and** it has a URL and a label. The URL field explains this in a tooltip.
+- Buttons container omitted when no button renders.
+- Clamp (typography) applies per title line and on the description.
+
+- Alignment drives `text-align`, flex alignment of the title/buttons, and the block's position (margin).
+- Base styles come from the existing widget: gray box `#eee` with 8px radius, 6px navy divider (max 290px), gradient pill buttons.
 
 ## 8. Responsive behavior
-- Tablet: smaller padding and title. Mobile: buttons stack full width.
+- Tablet: smaller padding, title × 0.85. Mobile: title × 0.75, buttons stack at natural width, following the alignment.
 
 ## 9. Empty / removed state
 Title, description, button 1 and button 2 all off.

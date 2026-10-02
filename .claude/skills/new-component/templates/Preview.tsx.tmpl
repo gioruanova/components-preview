@@ -1,16 +1,10 @@
-import type { CSSProperties } from 'react'
 import type { __Name__Config } from './schema'
 
+// Markup only — all styling comes from styles.ts (injected into the preview iframe).
+// Keep the real widget's class names and structure so CSS and generated HTML stay aligned.
 export function Preview({ config: c }: { config: __Name__Config }) {
-  // Style options → CSS custom properties, consumed by styles.css
-  const vars = {
-    '--__prefix__-bg': c.backgroundColor,
-    '--__prefix__-radius': `${c.borderRadius}px`,
-  } as CSSProperties
-
-  // Keep the real widget's class names so CSS and generated HTML stay aligned.
   return (
-    <div className={`${c.widgetId}-container __prefix__-container`} style={vars}>
+    <div className={`${c.widgetId}-container`}>
       <div id={c.widgetId}>{c.showTitle && <h2 className="__prefix__-title">{c.title}</h2>}</div>
     </div>
   )

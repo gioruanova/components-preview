@@ -1,11 +1,16 @@
 import type { Schema } from '@/tooling/types'
+import { widthFields, type WidthConfig } from '@/tooling/layout'
+import { typography, type Typography } from '@/tooling/typography'
 
 // Use a type alias (not an interface) so it satisfies Config.
-export type __Name__Config = {
+// Container options (useContainer, container*) are added automatically — don't declare them here.
+export type __Name__Config = WidthConfig & {
   widgetId: string
   showTitle: boolean
   title: string
   // …content (A), behavior (B) and style (C) options from the spec
+  alignment: 'left' | 'center' | 'right'
+  titleFont: Typography
   backgroundColor: string
   borderRadius: number
 }
@@ -14,14 +19,30 @@ export const defaults: __Name__Config = {
   widgetId: '__widgetId__',
   showTitle: true,
   title: 'Example title',
-  backgroundColor: '#ffffff',
-  borderRadius: 12,
+  widthMode: 'max',
+  maxWidth: 960,
+  alignment: 'left',
+  titleFont: typography({ size: 32, weight: 700, lineHeight: 1.2 }),
+  backgroundColor: '#eeeeee',
+  borderRadius: 8,
 }
 
 export const schema: Schema<__Name__Config> = {
   content: [{ type: 'switchText', key: 'title', toggleKey: 'showTitle', label: 'Title' }],
   widget: [{ type: 'text', key: 'widgetId', label: 'Widget ID' }],
   styles: [
+    ...widthFields<__Name__Config>({ min: 480, max: 1530 }),
+    {
+      type: 'segmented',
+      key: 'alignment',
+      label: 'Content alignment',
+      options: [
+        { value: 'left', label: 'Left' },
+        { value: 'center', label: 'Center' },
+        { value: 'right', label: 'Right' },
+      ],
+    },
+    { type: 'group', label: 'Typography', fields: [{ type: 'typography', key: 'titleFont', label: 'Title' }] },
     { type: 'color', key: 'backgroundColor', label: 'Background color' },
     { type: 'slider', key: 'borderRadius', label: 'Border radius', min: 0, max: 40, unit: 'px' },
   ],

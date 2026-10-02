@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { toCss, toScss } from '@/tooling/stylesheet'
 import { codegen, isEmpty, toHtml } from './codegen'
 import { defaults } from './schema'
+import { styles } from './styles'
 
 describe('__slug__ codegen', () => {
   // One test per rendering rule in the spec (§7).
@@ -14,9 +16,16 @@ describe('__slug__ codegen', () => {
   })
 
   it('substitutes the widget id and outputs live data', () => {
-    const [html, script, data] = codegen({ ...defaults, widgetId: 'myWidget', title: 'Hi' })
-    expect(html.code).toContain('id="myWidget"')
-    expect(script.code).toContain("const widgetName = 'myWidget'")
-    expect(JSON.parse(data.code).Title).toBe('Hi')
+    const { html, script, data } = codegen({ ...defaults, widgetId: 'myWidget', title: 'Hi' })
+    expect(html).toContain('id="myWidget"')
+    expect(script).toContain("const widgetName = 'myWidget'")
+    expect(data).toMatchObject({ Title: 'Hi' })
+  })
+})
+
+describe('__slug__ styles', () => {
+  it('follows alignment and exposes variables', () => {
+    expect(toCss([styles({ ...defaults, alignment: 'center' })])).toContain('text-align: center;')
+    expect(toScss([styles(defaults)])).toContain('$__prefix__-title-font-size: 32px;')
   })
 })

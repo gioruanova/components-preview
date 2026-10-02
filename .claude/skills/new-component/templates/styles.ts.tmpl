@@ -1,0 +1,53 @@
+import { widthDecls, widthVars } from '@/tooling/layout'
+import type { Sheet } from '@/tooling/stylesheet'
+import { scaledSize, typeStyles } from '@/tooling/typography'
+import type { __Name__Config } from './schema'
+
+const FLEX = { left: 'flex-start', center: 'center', right: 'flex-end' } as const
+
+/**
+ * One source for the preview CSS and the SCSS / CSS outputs.
+ * Reference variables as `$$name` → SCSS `$name`, CSS `var(--name)`.
+ */
+export function styles(c: __Name__Config): Sheet {
+  const title = typeStyles('__prefix__-title', c.titleFont)
+
+  return {
+    scope: `.${c.widgetId}-container`,
+    title: '__Display Name__',
+    vars: [
+      { name: '__prefix__-bg-color', value: c.backgroundColor, group: 'Colors' },
+      ...title.vars,
+      ...widthVars(c, '__prefix__-max-width'),
+      { name: '__prefix__-radius', value: `${c.borderRadius}px`, group: 'Layout' },
+    ],
+    rules: [
+      {
+        sel: `#${c.widgetId}`,
+        decls: {
+          display: 'flex',
+          'flex-direction': 'column',
+          'align-items': FLEX[c.alignment],
+          'text-align': c.alignment,
+          ...widthDecls(c, '__prefix__-max-width'),
+          margin: '0 auto',
+          padding: '48px',
+          'background-color': '$$__prefix__-bg-color',
+          'border-radius': '$$__prefix__-radius',
+        },
+        nest: [{ sel: '.__prefix__-title', decls: { margin: 0, ...title.decls, ...title.clamp } }],
+      },
+      { media: 'tablet', rules: [{ sel: `#${c.widgetId}`, decls: { padding: '32px' } }] },
+      {
+        media: 'mobile',
+        rules: [
+          {
+            sel: `#${c.widgetId}`,
+            decls: { padding: '20px' },
+            nest: [{ sel: '.__prefix__-title', decls: { 'font-size': scaledSize('__prefix__-title', 0.8) } }],
+          },
+        ],
+      },
+    ],
+  }
+}

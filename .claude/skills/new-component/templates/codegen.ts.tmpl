@@ -1,5 +1,5 @@
-import { json, lines } from '@/tooling/codegen'
-import type { CodeFile } from '@/tooling/types'
+import { lines } from '@/tooling/codegen'
+import type { WidgetCode } from '@/tooling/types'
 import type { __Name__Config } from './schema'
 
 /** Optional: "no data" → preview shows "Component empty/removed". */
@@ -31,10 +31,7 @@ export function toScript(c: __Name__Config) {
 }`
 }
 
-export function codegen(c: __Name__Config): CodeFile[] {
-  return [
-    { id: 'html', label: 'HTML', language: 'markup', code: toHtml(c) },
-    { id: 'script', label: 'Script', language: 'javascript', code: toScript(c) },
-    { id: 'data', label: 'Data', language: 'json', code: json(toData(c)) },
-  ]
+/** HTML / Script / Data. The tooling adds the container wrapper and the SCSS + CSS tabs (from styles.ts). */
+export function codegen(c: __Name__Config): WidgetCode {
+  return { html: toHtml(c), script: toScript(c), data: toData(c) }
 }

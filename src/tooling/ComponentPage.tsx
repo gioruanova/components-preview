@@ -1,19 +1,24 @@
 import { useMemo, useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { RegisteredWidget } from './registry'
-import type { Config } from './types'
+import { useUploads } from './assets'
 import { CodeOutput } from './CodeOutput'
 import { ConfigPanel } from './ConfigPanel'
+import { ContainerPreview, type ContainerConfig } from './container'
+import { outputFiles, previewCss } from './output'
 import { PreviewFrame } from './PreviewFrame'
-import { RichText, StatusBadge } from './ui'
+import type { RegisteredWidget } from './registry'
+import type { Config } from './types'
+import { InfoTip, RichText, StatusBadge } from './ui'
 
-/** Generic simulator page. Mount with `key={widget.path}` so state resets per widget. */
+/** Generic page for any widget. Mount with `key={widget.path}` so state resets per widget. */
 export function ComponentPage({ widget }: { widget: RegisteredWidget }) {
   const [config, setConfig] = useState<Config>(() => structuredClone(widget.defaults))
   const onChange = (key: string, value: unknown) => setConfig((c) => ({ ...c, [key]: value }))
+  const uploads = useUploads() // re-render when an uploaded background changes
 
-  const files = useMemo(() => widget.codegen(config), [widget, config])
+  const files = useMemo(() => outputFiles(widget, config), [widget, config, uploads])
+  const css = useMemo(() => previewCss(widget, config), [widget, config, uploads])
   const empty = widget.isEmpty?.(config) ?? false
   const { Preview } = widget
 
@@ -47,16 +52,24 @@ export function ComponentPage({ widget }: { widget: RegisteredWidget }) {
         <div className="order-2 min-w-0 lg:order-1">
           <ConfigPanel schema={widget.schema} config={config} onChange={onChange} />
         </div>
-        <div className="order-1 min-w-0 space-y-2 lg:sticky lg:top-24 lg:order-2">
-          <PreviewFrame styles={widget.styles} empty={empty}>
-            <Preview config={config} />
+        <div className="order-1 min-w-0 space-y-2 lg:sticky lg:top-28 lg:order-2">
+          <PreviewFrame css={css} empty={empty}>
+            <ContainerPreview config={config as ContainerConfig}>
+              <Preview config={config} />
+            </ContainerPreview>
           </PreviewFrame>
           {widget.previewHint && <p className="px-1 text-xs text-muted-foreground">{widget.previewHint}</p>}
         </div>
       </div>
 
       <div>
-        <h2 className="mb-3 text-lg font-semibold text-brand-navy">Output code</h2>
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-brand-navy">
+          Output code
+          <InfoTip label="About the output code">
+            Generated live from the configuration above. <b>HTML</b>: markup with data placeholders. <b>SCSS</b> / <b>CSS</b>: styles with
+            variables for colors, fonts and sizes. <b>Script</b>: the widget's render function. <b>Data</b>: the JSON the widget receives.
+          </InfoTip>
+        </h2>
         <CodeOutput files={files} />
       </div>
     </div>
