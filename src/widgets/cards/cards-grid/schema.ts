@@ -65,8 +65,8 @@ export const defaults: CardsConfig = withOverrides<CardsConfig>({
   cardCount: 4,
   items: [
     {
-      Title: 'Summer Concert Series',
-      Description: 'Live music every Friday night on the main lawn.',
+      Title: 'Card Title',
+      Description: 'Here is a spot for a short description. Keep it brief 1-4 scentences max. Here is a spot for a short description. Keep it brief 1-4 scentences max. Here is a spot for a short description.',
       Image: 'https://picsum.photos/seed/concert/600/400',
       Button1URL: 'https://example.com/concerts',
       Button2URL: 'https://example.com/concerts/tickets',

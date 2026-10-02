@@ -37,8 +37,8 @@
 ## 5. Data
 ```json
 {
-  "ShowTitle": true, "TitleLine1": "Join thousands of members", "TitleLine2": "today", "HeadingLevel": "h1",
-  "ShowDivider": true, "ShowDescription": true, "Description": "Get access to exclusive events, discounts, and community perks.",
+  "ShowTitle": true, "TitleLine1": "Search Engine", "TitleLine2": "Optimized Title", "HeadingLevel": "h1",
+  "ShowDivider": true, "ShowDescription": true, "Description": "Use this box for explaining who you are, where you are, what you do, and how to contact you. This text will greatly improve your visibility on Google and Bing, the top 2 search engines worldwide. Avoid adding dates to this text - the search engines will.",
   "Button1Show": true, "Button1URL": "https://example.com/learn-more", "Button1Label": "Learn More",
   "Button2Show": true, "Button2URL": "https://tickets.partner.com/join", "Button2Label": "Explore"
 }
