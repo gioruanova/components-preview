@@ -1,0 +1,198 @@
+# 2. General Tooling Enhancements
+
+These changes apply to **all components and configuration sections**.
+
+## 2.1 Modern UI Components
+
+Use modern UI controls instead of basic/native form elements whenever possible.
+
+Examples:
+
+* Use **toggles/switches** instead of checkboxes for `On / Off` options.
+* Use flexible **color pickers** for color configuration.
+* Use appropriate modern controls for numeric values, selectors, spacing, dimensions, etc.
+* Keep the interaction consistent across all components.
+
+The goal is to make the tooling feel like a modern configuration interface rather than a collection of standard HTML form controls.
+
+## 2.2 Code Block Actions
+
+For each code output block:
+
+* Add a **Copy** button.
+* The button should copy the currently displayed/active code block.
+* After copying, display a small confirmation tooltip/toast:
+
+  * `Code copied`
+
+Example: Toastify or an equivalent lightweight solution.
+
+## 2.3 Responsive Preview
+
+Research and integrate a component/library capable of controlling the preview viewport.
+
+Required viewport presets:
+
+* Desktop
+* Tablet
+* Mobile
+
+The purpose is to demonstrate how each component behaves across different viewport sizes.
+
+> Colors and highly specific styling are **not required for the generated output**. The tooling only needs to demonstrate the component capabilities.
+
+---
+
+# 3. General Preview Layout
+
+## 3.1 Configuration Organization
+
+Reorganize the configuration options into **three vertically stacked sections**.
+
+### Section A — Content
+
+All content-related configuration:
+
+* Title
+* Description
+* Buttons
+* Other textual/content options
+
+### Section B — Widget Configuration
+
+All component/widget behavior and configuration:
+
+* Widget ID
+* Number of cards
+* Show/hide elements
+* Show divider
+* Uses container
+* Other functional options
+
+### Section C — Styles
+
+All visual/style configuration:
+
+* Colors
+* Shapes
+* Border radius
+* Other styling options
+
+## 3.2 Overall Layout
+
+Reorganize the overall layout as:
+
+```text
+--------------------------------
+Functional Description
+--------------------------------
+
+| CONFIG A | |                |
+| CONFIG B | |  LIVE PREVIEW  |
+| CONFIG C | |                |
+|          | |                |
+
+--------------------------------
+|          OUTPUT CODE        |
+--------------------------------
+```
+
+The **Live Preview** should remain visible while the configuration sections are being modified.
+
+---
+
+# 4. Component-Specific Changes
+
+## 4.1 SEO Block
+
+### Title
+
+Add support for:
+
+* Title line 1
+* Title line 2
+
+Both values must be rendered **inside the component title**.
+
+A heading selector should therefore be available to define the appropriate heading level.
+
+### Background Styling
+
+Add a background color selector for the preview container.
+
+Also add:
+
+* Border radius
+* Border
+
+These only need to demonstrate the styling capabilities in the preview.
+
+### Empty State
+
+Simulate component removal.
+
+When the user **unselects all available options**, the Live Preview should display:
+
+> `Component empty/removed`
+
+instead of rendering an empty component.
+
+---
+
+## 4.2 Cards
+
+### Border
+
+Add:
+
+* Border width
+* Border style: `solid`
+* Border color picker
+
+### Title Background
+
+Add a toggle:
+
+* `Title Background: On / Off`
+
+### Card Color
+
+Add a color picker for the card color.
+
+When **Title Background** is enabled, this color should affect:
+
+* Card title background
+* Card overlay
+
+### Card Dimensions
+
+Add configuration for:
+
+* Card width
+* Card height
+
+### Cards per Row
+
+Add configuration for:
+
+* Number of cards per row
+
+This should be reflected directly in the Live Preview.
+
+---
+
+# 5. Overall Layout UI
+
+Let's explore using **AI agents to create a modern UI for the entire tooling**.
+
+Consider using an existing UI/component library rather than building all UI elements from scratch.
+
+Potential options to evaluate:
+
+* [shadcn/ui](https://ui.shadcn.com/) for the overall UI and general-purpose components.
+* [AI SDK UI](https://elements.ai-sdk.dev/) or similar agentic/component libraries.
+* Other specific agentic UI/component libraries that may be suitable for this type of developer tooling.
+
+The goal is to delegate the overall UI implementation to an agent where possible, while keeping the resulting interface consistent and maintainable.
+
+The agent can be provided with **Saffire** as a reference to extract relevant branding, colors, visual styles, and general design patterns so the tooling feels consistent with the existing Saffire ecosystem.

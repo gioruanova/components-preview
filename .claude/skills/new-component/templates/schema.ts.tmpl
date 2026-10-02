@@ -1,0 +1,28 @@
+import type { Schema } from '@/tooling/types'
+
+// Use a type alias (not an interface) so it satisfies Config.
+export type __Name__Config = {
+  widgetId: string
+  showTitle: boolean
+  title: string
+  // …content (A), behavior (B) and style (C) options from the spec
+  backgroundColor: string
+  borderRadius: number
+}
+
+export const defaults: __Name__Config = {
+  widgetId: '__widgetId__',
+  showTitle: true,
+  title: 'Example title',
+  backgroundColor: '#ffffff',
+  borderRadius: 12,
+}
+
+export const schema: Schema<__Name__Config> = {
+  content: [{ type: 'switchText', key: 'title', toggleKey: 'showTitle', label: 'Title' }],
+  widget: [{ type: 'text', key: 'widgetId', label: 'Widget ID' }],
+  styles: [
+    { type: 'color', key: 'backgroundColor', label: 'Background color' },
+    { type: 'slider', key: 'borderRadius', label: 'Border radius', min: 0, max: 40, unit: 'px' },
+  ],
+}

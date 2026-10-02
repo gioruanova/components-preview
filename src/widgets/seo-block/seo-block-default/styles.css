@@ -1,0 +1,80 @@
+/* Preview-only styles. Values come from CSS custom properties set by the config. */
+.seo-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 64px 48px;
+  background: var(--seo-bg);
+  color: var(--seo-text);
+  border-radius: var(--seo-radius);
+  border: var(--seo-border);
+  text-align: center;
+}
+
+.seo-title {
+  margin: 0;
+  font-size: 44px;
+  line-height: 1.15;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+h3.seo-title, h4.seo-title { font-size: 36px; }
+h5.seo-title, h6.seo-title { font-size: 30px; }
+
+.seo-title-line2 {
+  display: block;
+  font-weight: 400;
+}
+
+.seo-divider {
+  display: block;
+  width: 72px;
+  height: 4px;
+  margin: 20px auto 0;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.seo-description {
+  max-width: 640px;
+  margin: 20px auto 0;
+  font-size: 18px;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+.buttons-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.buttons-container .button {
+  display: inline-block;
+  padding: 14px 32px;
+  border-radius: 999px;
+  background: var(--seo-text);
+  color: var(--seo-bg);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.buttons-container .button:hover { transform: translateY(-1px); opacity: 0.9; }
+
+@media (max-width: 768px) {
+  .seo-container { padding: 48px 28px; }
+  .seo-title { font-size: 34px; }
+}
+
+@media (max-width: 480px) {
+  .seo-container { padding: 36px 20px; }
+  .seo-title { font-size: 26px; }
+  .seo-description { font-size: 16px; }
+  .buttons-container { flex-direction: column; }
+  .buttons-container .button { width: 100%; text-align: center; }
+}

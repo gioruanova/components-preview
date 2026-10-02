@@ -1,0 +1,17 @@
+import type { CSSProperties } from 'react'
+import type { __Name__Config } from './schema'
+
+export function Preview({ config: c }: { config: __Name__Config }) {
+  // Style options → CSS custom properties, consumed by styles.css
+  const vars = {
+    '--__prefix__-bg': c.backgroundColor,
+    '--__prefix__-radius': `${c.borderRadius}px`,
+  } as CSSProperties
+
+  // Keep the real widget's class names so CSS and generated HTML stay aligned.
+  return (
+    <div className={`${c.widgetId}-container __prefix__-container`} style={vars}>
+      <div id={c.widgetId}>{c.showTitle && <h2 className="__prefix__-title">{c.title}</h2>}</div>
+    </div>
+  )
+}

@@ -1,0 +1,40 @@
+import { json, lines } from '@/tooling/codegen'
+import type { CodeFile } from '@/tooling/types'
+import type { __Name__Config } from './schema'
+
+/** Optional: "no data" → preview shows "Component empty/removed". */
+export function isEmpty(c: __Name__Config) {
+  return !c.showTitle
+}
+
+export function toData(c: __Name__Config) {
+  return { ShowTitle: c.showTitle, Title: c.title }
+}
+
+export function toHtml(c: __Name__Config) {
+  // `false` entries are dropped, so optional markup disappears cleanly.
+  return lines(
+    `<div class="${c.widgetId}-container">`,
+    `  <div id="${c.widgetId}">`,
+    c.showTitle && '    <h2 class="__prefix__-title">${Title}</h2>',
+    '  </div>',
+    '</div>',
+  )
+}
+
+export function toScript(c: __Name__Config) {
+  return `function create__Name__(widgetData) {
+  const widgetName = '${c.widgetId}';
+  const $widget = $(\`#\${widgetName}\`);
+  const { ShowTitle, Title } = widgetData[0];
+  // …port of the real script
+}`
+}
+
+export function codegen(c: __Name__Config): CodeFile[] {
+  return [
+    { id: 'html', label: 'HTML', language: 'markup', code: toHtml(c) },
+    { id: 'script', label: 'Script', language: 'javascript', code: toScript(c) },
+    { id: 'data', label: 'Data', language: 'json', code: json(toData(c)) },
+  ]
+}

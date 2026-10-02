@@ -1,0 +1,20 @@
+import { defineWidget } from '@/tooling/types'
+import { codegen, isEmpty } from './codegen'
+import { Preview } from './Preview'
+import { defaults, schema } from './schema'
+import styles from './styles.css?inline'
+
+export default defineWidget({
+  name: '__Display Name__',
+  status: 'beta',
+  order: 10,
+  summary: '__One-line summary__',
+  description: ['__Functional description bullet__'],
+  previewHint: undefined,
+  defaults,
+  schema,
+  Preview,
+  styles,
+  codegen,
+  isEmpty,
+})

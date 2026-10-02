@@ -1,0 +1,22 @@
+import { describe, expect, it } from 'vitest'
+import { codegen, isEmpty, toHtml } from './codegen'
+import { defaults } from './schema'
+
+describe('__slug__ codegen', () => {
+  // One test per rendering rule in the spec (§7).
+  it('omits the title when hidden', () => {
+    expect(toHtml({ ...defaults, showTitle: false })).not.toContain('__prefix__-title')
+  })
+
+  it('is empty when there is no data', () => {
+    expect(isEmpty({ ...defaults, showTitle: false })).toBe(true)
+    expect(isEmpty(defaults)).toBe(false)
+  })
+
+  it('substitutes the widget id and outputs live data', () => {
+    const [html, script, data] = codegen({ ...defaults, widgetId: 'myWidget', title: 'Hi' })
+    expect(html.code).toContain('id="myWidget"')
+    expect(script.code).toContain("const widgetName = 'myWidget'")
+    expect(JSON.parse(data.code).Title).toBe('Hi')
+  })
+})

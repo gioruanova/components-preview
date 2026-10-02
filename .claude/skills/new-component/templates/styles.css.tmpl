@@ -1,0 +1,23 @@
+/* Preview-only styles. Values come from CSS custom properties set by the config. */
+.__prefix__-container {
+  padding: 48px;
+  background: var(--__prefix__-bg);
+  border-radius: var(--__prefix__-radius);
+}
+
+.__prefix__-title {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .__prefix__-container { padding: 32px; }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .__prefix__-container { padding: 20px; }
+  .__prefix__-title { font-size: 26px; }
+}

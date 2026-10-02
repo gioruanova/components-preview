@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Saffire brand tokens (from saffire.com). Light theme only. */
+:root {
+  --brand-blue: #007bc7;
+  --brand-blue-bright: #0081d1;
+  --brand-blue-dark: #005b94;
+  --brand-navy: #003c61;
+  --brand-orange: #f26922;
+  --brand-green: #66bb6a;
+  --brand-sky: #daf1ff;
+
+  --radius: 0.625rem;
+  --background: #f6f9fc;
+  --foreground: #222222;
+  --card: #ffffff;
+  --card-foreground: #222222;
+  --popover: #ffffff;
+  --popover-foreground: #222222;
+  --primary: var(--brand-blue);
+  --primary-foreground: #ffffff;
+  --secondary: #eef4f9;
+  --secondary-foreground: var(--brand-navy);
+  --muted: #eef2f6;
+  --muted-foreground: #5b6672;
+  --accent: var(--brand-sky);
+  --accent-foreground: var(--brand-navy);
+  --destructive: #d93025;
+  --border: #dde5ec;
+  --input: #d3dde6;
+  --ring: var(--brand-blue);
+}
+
+@theme inline {
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-dark: var(--brand-blue-dark);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-green: var(--brand-green);
+  --color-brand-sky: var(--brand-sky);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
