@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { FieldRenderer } from './fields/FieldRenderer'
 import type { Config, FieldDef, Schema, Section } from './types'
 import { InfoTip } from './ui'
+import { useViewport } from './viewport'
 
 const SECTIONS: { id: Section; letter: string; title: string; icon: typeof Type; info: string; clientManaged?: boolean }[] = [
   {
@@ -57,9 +58,31 @@ type Props<C extends Config> = {
   onChange: (key: string, value: unknown) => void
 }
 
+const hasResponsive = (fields: FieldDef<Config>[]): boolean =>
+  fields.some((f) => (f.type === 'group' ? hasResponsive(f.fields as FieldDef<Config>[]) : f.responsive === true))
+
+function ViewportBanner() {
+  const { viewport, setViewport } = useViewport()
+  if (viewport === 'desktop') return null
+  const name = viewport === 'tablet' ? 'Tablet' : 'Mobile'
+  return (
+    <div role="status" className="mb-3 flex items-start gap-2 rounded-lg border border-brand-blue/30 bg-brand-sky/50 p-3 text-[13px]">
+      <span className="min-w-0 flex-1">
+        Editing <b>{name}</b> values. Fields with the viewport icons get {name.toLowerCase()}-specific values; everything else applies to all sizes.
+      </span>
+      <button type="button" onClick={() => setViewport('desktop')} className="shrink-0 font-medium text-brand-blue hover:underline">
+        Back to Desktop
+      </button>
+    </div>
+  )
+}
+
 export function ConfigPanel<C extends Config>({ schema, config, onChange }: Props<C>) {
   const sections = SECTIONS.filter((s) => schema[s.id]?.length)
+  const responsiveSchema = hasResponsive([...schema.content, ...schema.widget, ...schema.styles] as FieldDef<Config>[])
   return (
+    <>
+    {responsiveSchema && <ViewportBanner />}
     <Accordion type="single" collapsible defaultValue={sections[0]?.id} className="space-y-3">
       {sections.map(({ id, letter, title, icon: Icon, info, clientManaged }) => (
         <AccordionItem
@@ -92,5 +115,6 @@ export function ConfigPanel<C extends Config>({ schema, config, onChange }: Prop
         </AccordionItem>
       ))}
     </Accordion>
+    </>
   )
 }

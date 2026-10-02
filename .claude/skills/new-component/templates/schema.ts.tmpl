@@ -1,49 +1,93 @@
-import type { Schema } from '@/tooling/types'
+import { buttonStyle, type ButtonStyle } from '@/tooling/buttons'
 import { widthFields, type WidthConfig } from '@/tooling/layout'
+import { withOverrides } from '@/tooling/responsive'
+import type { Schema } from '@/tooling/types'
 import { typography, type Typography } from '@/tooling/typography'
 
-// Use a type alias (not an interface) so it satisfies Config.
-// Container options (useContainer, container*) are added automatically — don't declare them here.
+// Type alias (not interface) so it satisfies Config. Container options are added automatically.
 export type __Name__Config = WidthConfig & {
   widgetId: string
-  showTitle: boolean
+  // A · Content (client-editable)
   title: string
-  // …content (A), behavior (B) and style (C) options from the spec
+  button1Label: string
+  button1Url: string
+  // B · Widget configuration (show/hide + behavior)
+  showTitle: boolean
+  button1Show: boolean
+  // C · Styles
   alignment: 'left' | 'center' | 'right'
   titleFont: Typography
   backgroundColor: string
   borderRadius: number
+  button1Style: ButtonStyle
 }
 
-export const defaults: __Name__Config = {
+// Tablet / mobile values that differ from desktop are explicit defaults (withOverrides).
+export const defaults: __Name__Config = withOverrides<__Name__Config>({
   widgetId: '__widgetId__',
-  showTitle: true,
   title: 'Example title',
+  button1Label: 'Learn more',
+  button1Url: '/learn-more',
+  showTitle: true,
+  button1Show: true,
   widthMode: 'max',
   maxWidth: 960,
   alignment: 'left',
   titleFont: typography({ size: 32, weight: 700, lineHeight: 1.2 }),
   backgroundColor: '#eeeeee',
   borderRadius: 8,
-}
+  button1Style: buttonStyle(),
+}, {
+  'titleFont@mobile': typography({ size: 26, weight: 700, lineHeight: 1.2 }),
+})
+
+const URL_TIP = "Without a URL (and a label) the button won't be rendered."
 
 export const schema: Schema<__Name__Config> = {
-  content: [{ type: 'switchText', key: 'title', toggleKey: 'showTitle', label: 'Title' }],
-  widget: [{ type: 'text', key: 'widgetId', label: 'Widget ID' }],
+  content: [
+    { type: 'text', key: 'title', label: 'Title', visibleWhen: (c) => c.showTitle },
+    {
+      type: 'group',
+      label: 'Button 1',
+      visibleWhen: (c) => c.button1Show,
+      fields: [
+        { type: 'text', key: 'button1Label', label: 'Label' },
+        { type: 'text', key: 'button1Url', label: 'URL', tip: URL_TIP },
+      ],
+    },
+  ],
+  widget: [
+    { type: 'text', key: 'widgetId', label: 'Widget ID' },
+    {
+      type: 'group',
+      label: 'Show / hide',
+      fields: [
+        { type: 'switch', key: 'showTitle', label: 'Show title' },
+        { type: 'switch', key: 'button1Show', label: 'Show button 1' },
+      ],
+    },
+  ],
   styles: [
     ...widthFields<__Name__Config>({ min: 480, max: 1530 }),
     {
       type: 'segmented',
       key: 'alignment',
       label: 'Content alignment',
+      responsive: true,
       options: [
         { value: 'left', label: 'Left' },
         { value: 'center', label: 'Center' },
         { value: 'right', label: 'Right' },
       ],
     },
-    { type: 'group', label: 'Typography', fields: [{ type: 'typography', key: 'titleFont', label: 'Title' }] },
+    { type: 'group', label: 'Typography', fields: [{ type: 'typography', key: 'titleFont', label: 'Title', responsive: true }] },
     { type: 'color', key: 'backgroundColor', label: 'Background color' },
     { type: 'slider', key: 'borderRadius', label: 'Border radius', min: 0, max: 40, unit: 'px' },
+    {
+      type: 'group',
+      label: 'Buttons',
+      visibleWhen: (c) => c.button1Show,
+      fields: [{ type: 'buttonStyle', key: 'button1Style', label: 'Button 1 · custom style' }],
+    },
   ],
 }

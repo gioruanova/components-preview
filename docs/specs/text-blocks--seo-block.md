@@ -67,6 +67,11 @@
 | C | Default button color | buttonColor | color | #0079c2 (gradient to #11325d) | | any button on |
 | C | Button 1 / 2 · custom style | button1Style / button2Style | buttonStyle | off (Button 2 preset orange) | | that button on |
 
+| C | Padding vertical / horizontal | paddingY / paddingX | slider | 50 / 50 | 0–120 px | | responsive · tablet 40/24, mobile 32/16 |
+| C | Stack buttons | buttonsStack | switch | off | | any button on | responsive · mobile on |
+
+Responsive (per viewport): alignment, title line 1/2 and description typography (tablet 31px, mobile 27px titles), padding, stack buttons.
+
 Container options are added automatically.
 
 ## 7. Rendering rules

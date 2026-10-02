@@ -6,7 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Monitor, Smartphone, Tablet } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { hasOverride, valueAt, VIEWPORT_ORDER, viewportKey } from '../responsive'
+import { useViewport } from '../viewport'
 import type { Config, FieldDef, LeafField, ListField } from '../types'
 import type { Typography } from '../typography'
 import { InfoTip } from '../ui'
@@ -56,10 +59,75 @@ function Row({ id, label, help, tip, children, inline }: { id: string; label: st
   )
 }
 
+const VP_ICONS = { desktop: Monitor, tablet: Tablet, mobile: Smartphone } as const
+const VP_LABEL = { desktop: 'Desktop', tablet: 'Tablet', mobile: 'Mobile' } as const
+
+/** Leaf field; `responsive` fields read/write the value of the viewport being edited (tablet/mobile overrides). */
 function Leaf<C extends Config>({ field, config, onChange }: { field: LeafField<C>; config: C; onChange: Props<C>['onChange'] }) {
+  const { viewport, setViewport } = useViewport()
+  const responsiveField = 'responsive' in field && field.responsive === true
+  const vp = responsiveField ? viewport : 'desktop'
+  const value = responsiveField ? valueAt(config, field.key, vp) : config[field.key]
+  const set = (v: unknown) => onChange(viewportKey(field.key, vp), v)
+  const control = <LeafControl field={field} config={config} onChange={onChange} value={value} set={set} />
+  if (!responsiveField) return control
+
+  const overridden = hasOverride(config, field.key, vp)
+  const anyOverride = hasOverride(config, field.key, 'tablet') || hasOverride(config, field.key, 'mobile')
+  const status =
+    vp === 'desktop' ? (anyOverride ? 'Desktop value · has per-viewport overrides' : 'Same on every viewport') : overridden ? `${VP_LABEL[vp]} override` : `Inherits ${vp === 'mobile' ? 'Tablet' : 'Desktop'}`
+
+  return (
+    <div className={cn('-mx-1.5 space-y-1.5 rounded-md px-1.5 py-1 transition-colors', overridden && 'bg-brand-orange/5 ring-1 ring-brand-orange/30')}>
+      {control}
+      <div className="flex items-center justify-between gap-2 text-[11px]">
+        <span className={cn('truncate', overridden ? 'font-medium text-[#b4470e]' : 'text-muted-foreground')}>
+          {status}
+          {overridden && (
+            <button type="button" onClick={() => onChange(viewportKey(field.key, vp), undefined)} className="ml-2 text-brand-blue underline-offset-2 hover:underline">
+              Reset
+            </button>
+          )}
+        </span>
+        <span className="flex shrink-0 items-center gap-0.5" role="group" aria-label={`${field.label}: viewport`}>
+          {VIEWPORT_ORDER.map((v) => {
+            const Icon = VP_ICONS[v]
+            const has = hasOverride(config, field.key, v)
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setViewport(v)}
+                aria-pressed={vp === v}
+                aria-label={`Edit ${VP_LABEL[v]} value${has ? ' (overridden)' : ''}`}
+                title={`${VP_LABEL[v]}${has ? ' · overridden' : ''}`}
+                className={cn('relative grid size-6 place-items-center rounded text-muted-foreground transition-colors hover:bg-muted', vp === v && 'bg-brand-blue text-white hover:bg-brand-blue')}
+              >
+                <Icon className="size-3.5" />
+                {has && <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-brand-orange" />}
+              </button>
+            )
+          })}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function LeafControl<C extends Config>({
+  field,
+  config,
+  onChange,
+  value,
+  set,
+}: {
+  field: LeafField<C>
+  config: C
+  onChange: Props<C>['onChange']
+  value: unknown
+  set: (v: unknown) => void
+}) {
   const id = `field-${field.key}`
-  const value = config[field.key]
-  const set = (v: unknown) => onChange(field.key, v)
 
   switch (field.type) {
     case 'text':
@@ -80,27 +148,6 @@ function Leaf<C extends Config>({ field, config, onChange }: { field: LeafField<
           <Switch id={id} checked={Boolean(value)} onCheckedChange={set} />
         </Row>
       )
-    case 'switchText': {
-      const on = Boolean(config[field.toggleKey])
-      const Control = field.multiline ? Textarea : Input
-      return (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between gap-3">
-            <Label htmlFor={id} className="text-[13px] font-medium">
-              {field.label}
-            </Label>
-            <Switch aria-label={`Show ${field.label}`} checked={on} onCheckedChange={(v) => onChange(field.toggleKey, v)} />
-          </div>
-          <Control
-            id={id}
-            disabled={!on}
-            value={String(value ?? '')}
-            placeholder={field.placeholder}
-            onChange={(e: { target: { value: string } }) => set(e.target.value)}
-          />
-        </div>
-      )
-    }
     case 'select':
       return (
         <Row id={id} label={field.label} help={field.help} tip={field.tip}>

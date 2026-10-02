@@ -1,118 +1,40 @@
-# Components Live Preview (Saffire)
+# Components Live Preview (Saffire) — Testing POC
 
-Interactive tool to explore, configure and preview Saffire website widgets. A homepage explains the tool. Each component page shows the functional description, a config panel (A Content / B Widget configuration / C Styles), a live responsive preview, and the generated **HTML / SCSS / CSS / Script / Data**.
+Vite + React 19 + TS + Tailwind v4 + shadcn/ui tool to preview and configure Saffire website widgets. Each component page has three config sections (A Content, B Widget configuration, C Styles), a live iframe preview (Desktop/Tablet/Mobile + popup) and generated HTML / SCSS / CSS / Script / Data. There is also a Combiner (`/combiner`) for page layouts.
 
-## Stack
-Vite · React 19 · TypeScript · Tailwind v4 · shadcn/ui (`src/components/ui`, Radix via `radix-ui`) · react-router · react-frame-component (iframe preview) · react-colorful · sonner (toasts) · prism-react-renderer · @fontsource fonts · Vitest.
+`npm run dev` · `npm test` · `npm run typecheck` · `npm run build` · `npm run check:output` (output standards) · `npm run check:unused` (unused files/deps). Run test + typecheck after every change.
 
-Commands: `npm run dev` · `npm test` · `npm run typecheck` · `npm run build`.
+## Where things go
+- `src/widgets/<category>/category.ts`: a family (sidebar, tabs, homepage). `upcoming: [...]` lists planned components ("coming soon").
+- `src/widgets/<category>/<component>/`: one component. `index.ts` holds the metadata, plus `schema.ts`, `Preview.tsx`, `styles.ts`, `codegen.ts` and `codegen.test.ts`. **Adding a folder = adding a page.** No registry, routing or nav edits.
+- `src/tooling/`: generic machinery shared by all widgets (fields, preview, outputs, style model). Change it generically, never for one widget.
+- `src/tooling/outputProfile.ts`: **naming conventions of the generated code** (tabs, CSS var naming, container classes, breakpoints, headers).
+- `src/combiner/`: Combiner (pure model in `model.ts`, covered by `model.test.ts`).
+- `docs/specs/<category>--<component>.md`: the source of truth for each component. The template is `docs/component-spec.template.md`.
+- `docs/reference.md`: full reference (field types, style model, container, buttons, Combiner, brand, ordering). **Read it when building or changing a component.**
+- `docs/output-integration.md`: how to adopt the real source-code structure and nomenclature when it arrives.
+- `output-standards/`: the Prettier + Stylelint configs the generated code must follow (see its README).
+- `docs/brief/`: the original brief, brand references and logos.
 
-## Structure
-```
-src/
-  app/                 shell: Layout (logo header, category tabs, collapsible sidebar), Sidebar tree / icon rail, HomePage, pages
-  assets/              tool-logo.png (header, white) · flame-icon.png ("Check Layouts" sidebar link)
-  combiner/            Combiner tool (Testing POC): model.ts (pure layout ops + localStorage), sections.ts (section schema + CSS),
-                       Scheme.tsx (dnd-kit drag & drop), Inspector.tsx, CombinedPreview.tsx, CombinerPage.tsx
-  tooling/             generic, widget-agnostic machinery — change rarely
-    types.ts           WidgetDefinition, CategoryDefinition, field types, defineWidget()
-    registry.ts        folder-driven registry (import.meta.glob) — never edit to add widgets
-    output.ts          withContainer() + outputFiles() (all tabs) + previewCss()
-    stylesheet.ts      style model → toCss() / toScss()  (variables via `$$name`)
-    typography.ts      Typography type, typography() defaults, typeStyles(), FONTS
-    container.tsx      global "Uses container" options (Widget configuration), sheet, HTML wrapper
-    buttons.ts         ButtonStyle + buttonStyle() defaults + customButtonStyles() — per-button "custom style"
-    layout.ts          widthFields() / widthDecls() — standard "Max width / 100%" option for a widget's own block
-    assets.ts          sample backgrounds + uploads (localStorage), previewUrl()/outputPath()
-    ComponentPage.tsx  page layout: description → [config | sticky preview] → code
-    ConfigPanel.tsx    renders sections A/B/C (with info tooltips)
-    fields/            FieldRenderer + controls (ColorPicker, SliderControl, Stepper, TypographyControl, ImagePicker)
-    PreviewFrame.tsx   iframe + Desktop 1280 / Tablet 768 / Mobile 375, scale-to-fit, fonts, empty state, resizable popup
-    CodeOutput.tsx     tabs + Copy button + "Code copied" toast
-    previewLinks.tsx   previewLinkClick(url): preview links never navigate; centered notice + confetti (CenterNotice.tsx):`n                       "Navigating to section" (same domain) or "Opening external URL in a new tab"
-    codegen.ts         helpers: lines(), linkAttributes(), isExternalUrl(), json()
-  widgets/
-    <category>/                 a component family → sidebar group + category tab
-      category.ts               defineCategory({ name, description, icon, order, upcoming })  — icon (lucide) for the collapsed sidebar;
-                                `upcoming: [{ name, summary }]` = planned components with a "coming soon" page (a real folder with the same slug replaces it)
-      shared/                   optional helpers shared by the family (ignored by the registry)
-      <component>/              one page → /<category>/<component>
-        index.ts                defineWidget({...}) — metadata + wiring
-        schema.ts               Config type, defaults, schema (A/B/C)
-        Preview.tsx             React render of the real widget markup (classes only, no inline styling)
-        styles.ts               styles(config) → Sheet  (preview CSS + SCSS + CSS output)
-        codegen.ts              codegen(config) → { html, script, data } (+ isEmpty, rule helpers)
-        codegen.test.ts         Vitest for rendering rules + styles
-docs/
-  component-spec.template.md        fill one per new component (the "context")
-  specs/<category>--<component>.md  filled specs (source of truth for each widget)
-```
-Folder names are URL slugs. **Order:** families are sorted by `order` in each `category.ts`, components inside a family by `order` in their `index.ts`, and `upcoming` items keep their array order (after the built ones). Lower comes first, ties sort alphabetically, and a missing order counts as 100. The sort is `byOrder` in `tooling/registry.ts`. To add a category or a component, add a folder. The sidebar tree, category tabs, homepage catalog and routes update automatically.
-
-## How styles work
-`styles(config)` returns a `Sheet` with these parts:
-- `scope`: the widget root selector the CSS custom properties are declared on.
-- `vars`: variables, grouped as Colors / Typography / Layout.
-- `rules`: nested rules, plus `{ media: 'tablet' | 'mobile', rules }` blocks.
-
-Inside a value, reference a variable as `$$name`. SCSS renders it as `$name` and CSS as `var(--name)`. The **same sheet** is injected into the preview and exported, so the preview and the output can never drift apart. Text styles always come from `typeStyles(prefix, config.xFont)`. It creates the `<prefix>-font-family / -font-size / -font-weight / -color` variables and returns `decls` plus a separate `clamp` (line clamp when enabled). Spread both on the text element, or put `clamp` on an inner element (e.g. one title line). Use `scaledSize(prefix, 0.8)` for smaller breakpoints.
-
-The container is global: `withContainer()` adds `useContainer` and a "Container" group to every widget's **Widget configuration** (B). The group holds width (Boxed with a max width, or Full width edge to edge), inner content max width, padding, background color, and background image + position (always cover). The tooling wraps the preview and the HTML in `.widget-container > .widget-container-inner`, and prepends the container sheet. Opt out with `container: false`.
-
-## Field types (schema)
-| type | use for | notes |
-|---|---|---|
-| `text` / `textarea` | free text, URLs, IDs | |
-| `switch` | any On/Off option | **never** checkboxes |
-| `switchText` | "show X" + its text in one row | `key` = text, `toggleKey` = boolean |
-| `select` | long option lists (heading level) | |
-| `segmented` | 2–4 mutually exclusive options (shape, alignment, position) | |
-| `color` | backgrounds, shapes, borders | popover picker + brand swatches + hex; **transparency on by default** (alpha slider, Transparent swatch, `#rrggbbaa`). `solid: true` for colors that must be opaque. Text colors (typography) are always solid |
-| `slider` | bounded numbers with units (px, %, em) | `min/max/step/unit`; always paired with a typed number input (clamped, ↑/↓ to step) |
-| `stepper` | small integer counts (cards, per row) | `min/max` |
-| `typography` | **every text element** (not buttons) | value from `typography({...})`; includes clamp on/off + lines |
-| `buttonStyle` | per-button custom style (Button 1 / Button 2) | switch + panel: background, hover bg/text, font, radius, border, shadow, padding |
-| `image` | background images | none / 5 samples / uploads (stored in this browser) |
-| `group` | visually group related fields ("Button 1", "Typography") | not a value |
-| `list` | repeatable items (cards) | `countKey` links to a stepper |
-
-Every field can take `visibleWhen(config)` to hide controls that don't apply (e.g. border color when the width is 0), and `tip` for an info tooltip next to its label. List item fields take `tip` too.
-
-## Rules (from the product brief — apply to every component)
-1. Modern controls only: switches for On/Off, color pickers for colors, sliders and steppers for numbers. Keep them consistent across components.
-2. Config is split into **A Content** (titles, descriptions, button labels/URLs, items), **B Widget configuration** (widget ID, counts, show/hide, behavior, uses container) and **C Styles** (alignment/position, typography, colors, shapes, radius, borders, sizes, container).
-3. Every text element (not buttons) gets a `typography` field. Font family, size, weight and color are exported as variables.
-4. Layout: functional description → config (left) + **sticky** live preview (right) → output code. Don't add per-widget layout code.
-5. Output is HTML / SCSS / CSS / Script / Data, all **live from config**. The tooling builds SCSS/CSS from `styles()`, so widgets only return `{ html, script, data }`.
-6. Viewports: Desktop / Tablet (≤768) / Mobile (≤480), in an iframe so real media queries apply.
-7. If a widget can be "removed" (all content off), implement `isEmpty(config)`. The frame then shows "Component empty/removed".
-8. Preview markup uses the real widget's class names and structure, so the CSS and the generated HTML stay aligned.
-9. Buttons are generic **Button 1 / Button 2** with an editable label (Content). A button renders only when it's shown, has a label, **and has a URL**. Put that rule in a shared helper used by Preview and codegen, and add the URL `tip`.
-10. Each widget's own block offers `widthFields()` (Max width / 100%) in Styles.
-11. Config sections and list items are single-open accordions.
-12. Every interactive element shows a pointer cursor (global rule in `index.css`). Custom clickable elements must be a `button`/`a` or have an interactive role.
-13. Content (A) is the **only** client-managed section. `ConfigPanel` shows the "Client" badge and callout. Don't put anything the client can't edit in `content`. **Show/hide toggles (show title, show description, show button N, …) always go in Widget configuration** (a "Show / hide" group); Content only holds the texts, labels, URLs and items, hidden with `visibleWhen` when their element is off.
-14. There is no "site base URL" option: external links are detected against `window.location.origin` (`currentOrigin()` in `tooling/codegen.ts`), so it works on any hosting.
-    Every button gets its own class (`button button-1`, `button button-2`) and a `buttonStyle` field in Styles → "Buttons". Apply it with `customButtonStyles(prefix, '.button.button-N', config.buttonNStyle)` inside the widget root rule, so it overrides the default `.button` rule.
-15. A family with no components yet shows a "coming soon" page. Families start collapsed in the sidebar, except the active one.
-16. Base and default styles match the existing Saffire widgets (saffire-docs-poc.vercel.app), e.g. blue `#0079c2`, text `#313841`, Poppins.
-
-## Combiner (Testing POC)
-`/combiner` builds page layouts from the registered components. There is no code output yet.
-- A layout is made of sections. Each section is a container (Boxed/Full width, max width, inner width, padding, background color/image + position, all reused from `containerOptionFields`) plus 1–3 columns, proportions, gap, vertical alignment and "stack on tablet".
-- Columns hold component instances. Each instance has its own full widget config, edited with the same `ConfigPanel`.
-- Widget IDs are kept unique per layout (`customCards`, `customCards2`, …) because the CSS is scoped by them.
-- Drag and drop uses `@dnd-kit`. Section ids are prefixed `s:`, column droppables `c:` and items `i:`. Items move across columns in `onDragOver` and reorder in `onDragEnd`.
-- The layout is saved to localStorage (`live-preview:combiner:v1`). On load, unknown components are dropped and new config defaults are merged in.
-- New components appear in the Combiner automatically (the "Add" menu reads the registry). Keep `model.ts` operations pure and covered by `model.test.ts`.
-## Brand (from saffire.com)
-- Tooling UI: blue `#007bc7` (primary), dark blue `#005b94`, navy `#003c61`, orange `#f26922` (accent/CTA), green `#66bb6a` (success), sky `#daf1ff` (soft surface), text `#222`.
-- Font: Outfit (stand-in for Strawford).
-- Tokens live in `src/index.css`. Use the Tailwind names `brand-blue`, `brand-navy`, `brand-orange`, `brand-green`, `brand-sky`.
-- Light theme only.
-- Widget previews use the widget's own styles. The fonts available there are listed in `tooling/typography.ts → FONTS`, loaded in `PreviewFrame`.
+## Golden rules (every component)
+1. Content (A) = **only what the client edits** (texts, labels, URLs, items). Show/hide toggles go in B → "Show / hide". Styles go in C.
+2. Use only the field types (switches, color pickers, sliders with number input, steppers, segmented, typography, buttonStyle). No native checkboxes or color inputs.
+3. Every text element gets a `typography` field. Every button is a generic Button 1/2 with a label, class `button button-N` and a `buttonStyle` field. A button renders only with a URL and a label (shared helper + URL `tip`).
+4. All CSS comes from `styles.ts` (`Sheet`, variables as `$$name`). The preview and the SCSS/CSS output use the same sheet. No static `.css` files, and no inline styles in `Preview.tsx`.
+5. `Preview.tsx` mirrors the real markup and class names. Links use `onClick={previewLinkClick(url)}` and `{...linkAttributes(url, label)}`.
+6. Codegen is live from config (`lines()` for optional markup) and returns `{ html, script, data }`. The tooling adds the container wrapper and SCSS/CSS.
+7. Each widget's own block gets `widthFields()` (Max width / 100%). The global container is added automatically (opt out with `container: false`).
+8. Implement `isEmpty` if the widget can be "removed".
+9. Defaults match the live Saffire widgets (saffire-docs-poc): `#0079c2`, text `#313841`, Poppins.
+10. Every rendering rule in the spec gets a test in `codegen.test.ts`.
+11. Anything that can differ per viewport is a `responsive: true` field (`responsive()` / `responsiveType()` in styles). Media overrides reuse the base selectors exactly. Never hard-code tablet/mobile values; put them in `withOverrides` defaults.
+12. Generated SCSS/CSS must pass `npm run check:output` (`output-standards/`: Stylelint + Prettier, SCSS ≡ CSS ≡ preview). Fix the generator, not the widget.
 
 ## Skills
-- `/new-category`: create a new component family.
-- `/new-component`: build a component from a filled spec in `docs/specs/`.
-- `/update-component`: apply a change request to an existing component.
+- `/new-component <spec>`: build a component from a filled spec.
+- `/update-component <category>/<component> <change>`: change an existing one.
+- `/new-category <name>`: add a family, or planned "coming soon" items.
+- `/adopt-source-structure <path>`: map the real source structure and nomenclature onto the outputs.
+- `/update-output-standards <config>`: change the Prettier/Stylelint rules for the output and make every component comply.
+
+Keep this file short. Detail belongs in `docs/reference.md`.

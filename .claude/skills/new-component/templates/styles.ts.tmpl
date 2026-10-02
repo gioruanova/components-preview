@@ -1,16 +1,41 @@
+import { customButtonStyles } from '@/tooling/buttons'
 import { widthDecls, widthVars } from '@/tooling/layout'
-import type { Sheet } from '@/tooling/stylesheet'
-import { scaledSize, typeStyles } from '@/tooling/typography'
+import { responsive, type Viewport } from '@/tooling/responsive'
+import type { Rule, Sheet } from '@/tooling/stylesheet'
+import { responsiveType } from '@/tooling/typography'
 import type { __Name__Config } from './schema'
 
 const FLEX = { left: 'flex-start', center: 'center', right: 'flex-end' } as const
 
 /**
  * One source for the preview CSS and the SCSS / CSS outputs.
- * Reference variables as `$$name` → SCSS `$name`, CSS `var(--name)`.
+ * Reference variables as `$$name` → SCSS `$name`, CSS `var(--name)` (naming via outputProfile).
+ * Responsive fields: `responsive(c, key)` gives the desktop value + only what CHANGES at tablet/mobile
+ * (undefined = unchanged → the declaration is dropped from that media block).
  */
 export function styles(c: __Name__Config): Sheet {
-  const title = typeStyles('__prefix__-title', c.titleFont)
+  const align = responsive(c, 'alignment')
+  const title = responsiveType('__prefix__-title', responsive(c, 'titleFont'))
+  const b1 = customButtonStyles('__prefix__-button-1', '.button.button-1', c.button1Style)
+  const customButtons = [b1.rule].filter((r): r is Rule => r !== null)
+
+  /**
+   * Values that can change per viewport. IMPORTANT: media overrides must use the SAME selectors/nesting
+   * as the base rules (same specificity), or they lose — standards.test.ts checks this.
+   */
+  const at = (vp: Viewport): Rule => {
+    const a = vp === 'desktop' ? align.desktop : align[vp]
+    const t = vp === 'desktop' ? title.base : title[vp]
+    return {
+      sel: `#${c.widgetId}`,
+      decls: { 'align-items': a && FLEX[a], 'text-align': a },
+      nest: [
+        { sel: '.__prefix__-title', decls: { ...t.decls, ...t.clamp } },
+        { sel: '.buttons-container', decls: { 'justify-content': a && FLEX[a] } },
+      ],
+    }
+  }
+  const desktop = at('desktop')
 
   return {
     scope: `.${c.widgetId}-container`,
@@ -20,6 +45,7 @@ export function styles(c: __Name__Config): Sheet {
       ...title.vars,
       ...widthVars(c, '__prefix__-max-width'),
       { name: '__prefix__-radius', value: `${c.borderRadius}px`, group: 'Layout' },
+      ...b1.vars,
     ],
     rules: [
       {
@@ -27,27 +53,27 @@ export function styles(c: __Name__Config): Sheet {
         decls: {
           display: 'flex',
           'flex-direction': 'column',
-          'align-items': FLEX[c.alignment],
-          'text-align': c.alignment,
+          gap: '20px',
           ...widthDecls(c, '__prefix__-max-width'),
           margin: '0 auto',
           padding: '48px',
           'background-color': '$$__prefix__-bg-color',
           'border-radius': '$$__prefix__-radius',
+          ...desktop.decls,
         },
-        nest: [{ sel: '.__prefix__-title', decls: { margin: 0, ...title.decls, ...title.clamp } }],
-      },
-      { media: 'tablet', rules: [{ sel: `#${c.widgetId}`, decls: { padding: '32px' } }] },
-      {
-        media: 'mobile',
-        rules: [
+        nest: [
+          { sel: '.__prefix__-title', decls: { margin: 0, ...desktop.nest![0].decls } },
+          { sel: '.buttons-container', decls: { display: 'flex', 'flex-wrap': 'wrap', gap: '10px', ...desktop.nest![1].decls } },
+          // default button look (overridden per button by its custom style)
           {
-            sel: `#${c.widgetId}`,
-            decls: { padding: '20px' },
-            nest: [{ sel: '.__prefix__-title', decls: { 'font-size': scaledSize('__prefix__-title', 0.8) } }],
+            sel: '.button',
+            decls: { display: 'inline-block', padding: '14px 24px', 'border-radius': '40px', background: '#0079c2', color: '#ffffff', 'text-decoration': 'none' },
           },
+          ...customButtons,
         ],
       },
+      { media: 'tablet', rules: [at('tablet')] },
+      { media: 'mobile', rules: [at('mobile')] },
     ],
   }
 }

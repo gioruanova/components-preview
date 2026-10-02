@@ -10,9 +10,18 @@ import { PreviewFrame } from './PreviewFrame'
 import type { RegisteredWidget } from './registry'
 import type { Config } from './types'
 import { InfoTip, RichText, StatusBadge } from './ui'
+import { ViewportProvider } from './viewport'
 
 /** Generic page for any widget. Mount with `key={widget.path}` so state resets per widget. */
 export function ComponentPage({ widget }: { widget: RegisteredWidget }) {
+  return (
+    <ViewportProvider>
+      <ComponentPageBody widget={widget} />
+    </ViewportProvider>
+  )
+}
+
+function ComponentPageBody({ widget }: { widget: RegisteredWidget }) {
   const [config, setConfig] = useState<Config>(() => structuredClone(widget.defaults))
   const onChange = (key: string, value: unknown) => setConfig((c) => ({ ...c, [key]: value }))
   const uploads = useUploads() // re-render when an uploaded background changes

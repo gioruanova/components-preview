@@ -10,8 +10,13 @@ describe('__slug__ codegen', () => {
     expect(toHtml({ ...defaults, showTitle: false })).not.toContain('__prefix__-title')
   })
 
+  it('does not render a button without a URL', () => {
+    expect(toHtml(defaults)).toContain('button button-1')
+    expect(toHtml({ ...defaults, button1Url: '' })).not.toContain('buttons-container')
+  })
+
   it('is empty when there is no data', () => {
-    expect(isEmpty({ ...defaults, showTitle: false })).toBe(true)
+    expect(isEmpty({ ...defaults, showTitle: false, button1Show: false })).toBe(true)
     expect(isEmpty(defaults)).toBe(false)
   })
 
@@ -27,5 +32,16 @@ describe('__slug__ styles', () => {
   it('follows alignment and exposes variables', () => {
     expect(toCss([styles({ ...defaults, alignment: 'center' })])).toContain('text-align: center;')
     expect(toScss([styles(defaults)])).toContain('$__prefix__-title-font-size: 32px;')
+  })
+
+  it('emits mobile overrides only when they differ', () => {
+    const css = toCss([styles(defaults)])
+    expect(css.slice(css.indexOf('@media (max-width: 480px)'))).toContain('font-size')
+    expect(toCss([styles({ ...defaults, 'titleFont@mobile': defaults.titleFont } as typeof defaults)])).not.toContain('@media (max-width: 480px)')
+  })
+
+  it('applies a custom button style only when enabled', () => {
+    expect(toCss([styles(defaults)])).not.toContain('.button.button-1')
+    expect(toCss([styles({ ...defaults, button1Style: { ...defaults.button1Style, custom: true } })])).toContain('.button.button-1')
   })
 })

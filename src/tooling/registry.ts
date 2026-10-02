@@ -28,7 +28,7 @@ export type RegisteredCategory = CategoryDefinition & {
 const byOrder = (a: { order?: number; name: string }, b: { order?: number; name: string }) =>
   (a.order ?? 100) - (b.order ?? 100) || a.name.localeCompare(b.name)
 
-export const slugify = (s: string) =>
+const slugify = (s: string) =>
   s
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')

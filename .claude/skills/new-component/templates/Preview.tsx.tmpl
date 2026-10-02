@@ -1,11 +1,26 @@
+import { linkAttributes } from '@/tooling/codegen'
+import { previewLinkClick } from '@/tooling/previewLinks'
+import { renderedButtons } from './codegen'
 import type { __Name__Config } from './schema'
 
 // Markup only — all styling comes from styles.ts (injected into the preview iframe).
 // Keep the real widget's class names and structure so CSS and generated HTML stay aligned.
 export function Preview({ config: c }: { config: __Name__Config }) {
+  const buttons = renderedButtons(c)
   return (
     <div className={`${c.widgetId}-container`}>
-      <div id={c.widgetId}>{c.showTitle && <h2 className="__prefix__-title">{c.title}</h2>}</div>
+      <div id={c.widgetId}>
+        {c.showTitle && <h2 className="__prefix__-title">{c.title}</h2>}
+        {buttons.length > 0 && (
+          <div className="buttons-container">
+            {buttons.map((b) => (
+              <a key={b.n} href={b.url} className={`button button-${b.n}`} onClick={previewLinkClick(b.url)} {...linkAttributes(b.url, b.label)}>
+                {b.label}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

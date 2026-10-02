@@ -72,6 +72,11 @@
 | C | Button 1 / 2 · custom style | button1Style / button2Style | buttonStyle | off (outlined white preset) | | that button on |
 | C | Description | descriptionFont | typography | Poppins 15 / 400 / 1.4 / #fff, clamp 3 | | |
 
+| C | Card min width | cardMinWidth | slider | 260 | 0–480 px (0 = none) | | responsive · cards wrap instead of shrinking |
+| C | Aspect ratio | aspectRatio | select | auto | auto / 1:1 / 4:3 / 3:2 / 16:9 / 3:4 | square | responsive · auto uses card height |
+
+Responsive (per viewport): cards per row (tablet 2, mobile 1), card width, min width, height, aspect ratio, content position, title (fluid, cqi; tablet 24px, mobile 22px) and description typography.
+
 Container options are added automatically.
 
 ## 7. Rendering rules

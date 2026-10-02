@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useUploads } from '@/tooling/assets'
 import { ContainerPreview, type ContainerConfig } from '@/tooling/container'
 import { previewCss } from '@/tooling/output'
+import { profile } from '@/tooling/outputProfile'
 import { PreviewFrame } from '@/tooling/PreviewFrame'
 import { toCss } from '@/tooling/stylesheet'
 import { findWidgetByKey, type Layout } from './model'
@@ -30,7 +31,7 @@ export function CombinedPreview({ layout, guides }: { layout: Layout; guides: bo
       ) : (
         layout.sections.map((s) => (
           <section key={s.id} id={`cs-${s.id}`} className="combiner-section" data-label={s.settings.name}>
-            <div className="widget-container-inner">
+            <div className={profile.classNames.containerInner}>
               <div className="combiner-columns">
                 {s.columns.map((col, i) => (
                   <div key={col.id} className="combiner-column">

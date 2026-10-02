@@ -28,7 +28,7 @@ describe('stylesheet', () => {
   it('renders CSS with custom properties on the scope', () => {
     const css = toCss([sheet])
     expect(css).toContain('.w {\n  --brand: #007bc7;\n  --gap: 20px;\n}')
-    expect(css).toContain('#w {\n  color: var(--brand);\n  gap: var(--gap);\n  margin: 0;\n}')
+    expect(css).toContain('#w {\n  gap: var(--gap);\n  margin: 0;\n  color: var(--brand);\n}') // recess order
     expect(css).toContain('#w .item:hover {\n  color: red;\n}')
     expect(css).toContain('@media (max-width: 480px) {\n  #w {\n    gap: calc(var(--gap) * 0.5);\n  }\n}')
     expect(css).not.toContain('hidden')
@@ -37,8 +37,8 @@ describe('stylesheet', () => {
   it('renders SCSS with grouped $variables and nesting', () => {
     const scss = toScss([sheet])
     expect(scss).toContain('$bp-mobile: 480px;')
-    expect(scss).toContain('// Colors\n$brand: #007bc7;')
-    expect(scss).toContain('  .item {\n    padding: 4px;\n    &:hover {\n      color: red;\n    }\n  }')
+    expect(scss).toContain('// Widget — Colors\n$brand: #007bc7;')
+    expect(scss).toContain('  color: $brand;\n\n  .item {\n    padding: 4px;\n\n    &:hover {\n      color: red;\n    }\n  }')
     expect(scss).toContain('@media (max-width: $bp-mobile) {\n  #w {\n    gap: calc($gap * 0.5);\n  }\n}')
   })
 })

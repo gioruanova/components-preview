@@ -61,7 +61,7 @@ describe('custom buttons', () => {
     expect(css).not.toContain('.button.button-1')
     expect(css).toMatch(/#customSeoBlock \.button\.button-2 \{[^}]*border-radius: var\(--seo-button-2-radius\);[^}]*box-shadow: 0 4px 12px/)
     expect(css).toContain('--seo-button-2-hover-bg: #123456;')
-    expect(css).toMatch(/\.button\.button-2:hover, #customSeoBlock \.button\.button-2:focus-visible \{[^}]*background: var\(--seo-button-2-hover-bg\);/)
+    expect(css).toMatch(/\.button\.button-2:hover,\n#customSeoBlock \.button\.button-2:focus-visible \{[^}]*background: var\(--seo-button-2-hover-bg\);/)
   })
 
   it('marks each button with its own class', () => {
@@ -94,6 +94,6 @@ describe('seo-block styles', () => {
     expect(scss).toContain("$seo-title-font-family: 'Inter', sans-serif;")
     expect(scss).toContain('$seo-title-font-size: 40px;')
     expect(scss).toContain('font-size: $seo-title-font-size;')
-    expect(scss).toContain('$seo-bg-color: #eeeeee;')
+    expect(scss).toContain('$seo-bg-color: #eee;') // short hex
   })
 })

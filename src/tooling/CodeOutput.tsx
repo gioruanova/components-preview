@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Highlight, themes } from 'prism-react-renderer'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, LoaderCircle, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { formatFiles } from './formatCode'
 import type { CodeFile } from './types'
 
 /** Async Clipboard API, falling back to execCommand when it's unavailable or denied. */
@@ -22,14 +23,35 @@ async function writeClipboard(text: string) {
   }
 }
 
-export function CodeOutput({ files }: { files: CodeFile[] }) {
-  const [active, setActive] = useState(files[0]?.id)
+/** Prettier-formats the files (output-standards/prettier.json), debounced while the user drags sliders. */
+function useFormatted(files: CodeFile[]) {
+  const [state, setState] = useState<{ source: CodeFile[]; formatted: CodeFile[] } | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    const t = window.setTimeout(() => {
+      void formatFiles(files).then((formatted) => !cancelled && setState({ source: files, formatted }))
+    }, 150)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [files])
+  // until the latest formatting is ready, keep showing the previous formatted version (no flicker)
+  return { files: state?.formatted ?? files, pending: state?.source !== files }
+}
+
+export function CodeOutput({ files: raw }: { files: CodeFile[] }) {
+  const { files, pending } = useFormatted(raw)
+  const [active, setActive] = useState(raw[0]?.id)
   const [copied, setCopied] = useState(false)
   const file = files.find((f) => f.id === active) ?? files[0]
 
   const copy = async () => {
     try {
-      await writeClipboard(file.code)
+      // always copy the formatted version of the current config (even if the panel is still re-formatting)
+      const rawFile = raw.find((f) => f.id === file.id)
+      const code = pending && rawFile ? (await formatFiles([rawFile]))[0].code : file.code
+      await writeClipboard(code)
       toast.success('Code copied')
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
@@ -50,6 +72,10 @@ export function CodeOutput({ files }: { files: CodeFile[] }) {
             ))}
           </TabsList>
         </Tabs>
+        <span className="ml-auto hidden items-center gap-1 text-[11px] text-muted-foreground sm:inline-flex" title="Formatted with output-standards/prettier.json; SCSS/CSS checked against output-standards/stylelint.json">
+          {pending ? <LoaderCircle className="size-3 animate-spin" /> : <Sparkles className="size-3 text-brand-blue" />}
+          Prettier · output standards
+        </span>
         <Button size="sm" variant="outline" onClick={copy} aria-label={`Copy ${file.label} code`}>
           {copied ? <Check className="text-brand-green" /> : <Copy />}
           Copy

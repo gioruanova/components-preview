@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react'
-import { ChevronDown, Italic } from 'lucide-react'
+import { ChevronDown, FlaskConical, Italic } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Toggle } from '@/components/ui/toggle'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { FONTS, WEIGHTS, fontStack, type Typography } from '../typography'
+import { FONT_NOTE, FONTS, WEIGHTS, fontStack, type Typography } from '../typography'
 import { ColorPicker, SliderControl, Stepper } from './controls'
 
 const TRANSFORMS: { value: Typography['transform']; label: string }[] = [
@@ -43,7 +43,7 @@ export function TypographyControl({ id, value, onChange, clamp = true }: { id: s
             Aa
           </span>
           <span className="min-w-0 flex-1 truncate text-sm">
-            {value.family} · {value.size}px · {value.weight}
+            {value.family} · {value.fluid ? `${value.minSize ?? 14}–${value.size}px` : `${value.size}px`} · {value.weight}
             {clamp && value.clamp && ` · ${value.lines} line${value.lines > 1 ? 's' : ''}`}
           </span>
           <span className="size-3.5 shrink-0 rounded-full border border-black/10" style={{ background: value.color }} />
@@ -64,6 +64,10 @@ export function TypographyControl({ id, value, onChange, clamp = true }: { id: s
               ))}
             </SelectContent>
           </Select>
+          <p className="flex gap-1 text-[11px] leading-snug text-muted-foreground">
+            <FlaskConical className="mt-px size-3 shrink-0 text-brand-orange" />
+            {FONT_NOTE}
+          </p>
         </Sub>
         <div className="grid grid-cols-[1fr_auto] items-end gap-2">
           <Sub label="Weight">
@@ -84,9 +88,23 @@ export function TypographyControl({ id, value, onChange, clamp = true }: { id: s
             <Italic />
           </Toggle>
         </div>
-        <Sub label="Size">
+        <Sub label={value.fluid ? 'Max size' : 'Size'}>
           <SliderControl id={`${id}-size`} value={value.size} onChange={(v) => set('size', v)} min={10} max={72} unit="px" />
         </Sub>
+        <div className="space-y-2 rounded-md border bg-muted/40 px-2.5 py-2">
+          <div className="flex items-center gap-2">
+            <Switch id={`${id}-fluid`} checked={Boolean(value.fluid)} onCheckedChange={(v) => onChange({ ...value, fluid: v, minSize: value.minSize ?? Math.max(10, Math.round(value.size * 0.65)) })} />
+            <Label htmlFor={`${id}-fluid`} className="text-xs">
+              Fluid size
+            </Label>
+            <span className="ml-auto text-[11px] text-muted-foreground">shrinks with the available width</span>
+          </div>
+          {value.fluid && (
+            <Sub label="Min size">
+              <SliderControl id={`${id}-min`} value={value.minSize ?? 14} onChange={(v) => set('minSize', Math.min(v, value.size))} min={8} max={value.size} unit="px" />
+            </Sub>
+          )}
+        </div>
         <Sub label="Line height">
           <SliderControl id={`${id}-lh`} value={value.lineHeight} onChange={(v) => set('lineHeight', v)} min={0.8} max={2.4} step={0.05} />
         </Sub>

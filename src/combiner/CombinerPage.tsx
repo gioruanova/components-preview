@@ -4,12 +4,21 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { InfoTip, TestingPocBadge } from '@/tooling/ui'
+import { ViewportProvider } from '@/tooling/viewport'
 import { CombinedPreview } from './CombinedPreview'
 import { Inspector } from './Inspector'
 import { Scheme } from './Scheme'
 import { useLayout, type Selection } from './useLayout'
 
 export function CombinerPage() {
+  return (
+    <ViewportProvider>
+      <CombinerPageBody />
+    </ViewportProvider>
+  )
+}
+
+function CombinerPageBody() {
   const { layout, update, updateWithUndo, reset, clear, saved } = useLayout()
   const [selection, setSelection] = useState<Selection>(null)
   const [guides, setGuides] = useState(true)

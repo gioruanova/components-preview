@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { FlaskConical, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import logo from '@/assets/tool-logo.png'
 import { NavLink, Outlet, useLocation } from 'react-router'
@@ -45,6 +45,16 @@ function CategoryTabs() {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+function PageLoading() {
+  return (
+    <div role="status" className="grid min-h-64 place-items-center text-sm text-muted-foreground">
+      <span className="flex items-center gap-2">
+        <span className="size-4 animate-spin rounded-full border-2 border-brand-blue border-t-transparent" /> Loading…
+      </span>
     </div>
   )
 }
@@ -142,7 +152,9 @@ export function Layout() {
         <div className="flex min-h-[calc(100svh-5rem)] min-w-0 flex-1 flex-col">
           <main className="w-full flex-1 space-y-6 px-4 py-6 lg:px-8">
             <CategoryTabs />
-            <Outlet />
+            <Suspense fallback={<PageLoading />}>
+              <Outlet />
+            </Suspense>
           </main>
           <Footer />
         </div>

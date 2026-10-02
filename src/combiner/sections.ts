@@ -62,11 +62,9 @@ export const sectionFields: FieldDef<SectionSettings>[] = [
   { type: 'group', label: 'Container', fields: containerFields as never },
 ]
 
-export const sectionSelector = (s: Section) => `#cs-${s.id}`
-
 /** Container (width, background…) + column grid styles for one section, scoped by its id. */
 export function sectionSheets(s: Section): Sheet[] {
-  const sel = sectionSelector(s)
+  const sel = `#cs-${s.id}`
   const tracks = columnFractions(s.settings)
     .map((f) => `minmax(0, ${f}fr)`)
     .join(' ')

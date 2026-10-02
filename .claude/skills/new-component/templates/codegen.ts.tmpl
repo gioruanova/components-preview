@@ -2,21 +2,30 @@ import { lines } from '@/tooling/codegen'
 import type { WidgetCode } from '@/tooling/types'
 import type { __Name__Config } from './schema'
 
+/** Rendering rule shared by Preview and codegen: a button needs show + URL + label. */
+export function renderedButtons(c: __Name__Config) {
+  return [{ n: 1, show: c.button1Show, url: c.button1Url, label: c.button1Label }].filter((b) => b.show && b.url.trim() && b.label.trim())
+}
+
 /** Optional: "no data" → preview shows "Component empty/removed". */
 export function isEmpty(c: __Name__Config) {
-  return !c.showTitle
+  return !c.showTitle && renderedButtons(c).length === 0
 }
 
 export function toData(c: __Name__Config) {
-  return { ShowTitle: c.showTitle, Title: c.title }
+  return { ShowTitle: c.showTitle, Title: c.title, Button1Show: c.button1Show, Button1Label: c.button1Label, Button1URL: c.button1Url }
 }
 
 export function toHtml(c: __Name__Config) {
+  const buttons = renderedButtons(c)
   // `false` entries are dropped, so optional markup disappears cleanly.
   return lines(
     `<div class="${c.widgetId}-container">`,
     `  <div id="${c.widgetId}">`,
     c.showTitle && '    <h2 class="__prefix__-title">${Title}</h2>',
+    buttons.length > 0 && '    <div class="buttons-container">',
+    ...buttons.map((b) => `      <a href="\${Button${b.n}URL}" class="button button-${b.n}">\${Button${b.n}Label}</a>`),
+    buttons.length > 0 && '    </div>',
     '  </div>',
     '</div>',
   )
@@ -26,7 +35,7 @@ export function toScript(c: __Name__Config) {
   return `function create__Name__(widgetData) {
   const widgetName = '${c.widgetId}';
   const $widget = $(\`#\${widgetName}\`);
-  const { ShowTitle, Title } = widgetData[0];
+  const { ShowTitle, Title, Button1Show, Button1Label, Button1URL } = widgetData[0];
   // …port of the real script
 }`
 }

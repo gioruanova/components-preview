@@ -142,7 +142,7 @@ export function SidebarTree({ onNavigate, collapsed = false }: { onNavigate?: ()
   )
 }
 
-export const LAYOUTS_URL = 'https://www.saffire.com/layouts'
+const LAYOUTS_URL = 'https://www.saffire.com/layouts'
 
 /** External "Check Layouts" link (sidebar footer). */
 export function CheckLayoutsLink({ collapsed = false }: { collapsed?: boolean }) {

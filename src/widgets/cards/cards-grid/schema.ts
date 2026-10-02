@@ -1,6 +1,7 @@
 import type { Schema } from '@/tooling/types'
 import { buttonStyle, type ButtonStyle } from '@/tooling/buttons'
 import { widthFields, type WidthConfig } from '@/tooling/layout'
+import { withOverrides } from '@/tooling/responsive'
 import { typography, type Typography } from '@/tooling/typography'
 
 export type CardItem = {
@@ -26,6 +27,10 @@ export type CardsConfig = WidthConfig & {
   borderRadius: number
   cardWidth: number
   cardHeight: number
+  /** 0 = none. Cards wrap to the next row instead of shrinking below it. */
+  cardMinWidth: number
+  /** 'auto' = use cardHeight; otherwise the image keeps this ratio at any width. */
+  aspectRatio: 'auto' | '1 / 1' | '4 / 3' | '3 / 2' | '16 / 9' | '3 / 4'
   borderWidth: number
   borderColor: string
   titleBackground: boolean
@@ -49,7 +54,8 @@ export const newItem = (i: number): CardItem => ({
 })
 
 // Base styles follow the existing Saffire widget (saffire-docs-poc).
-export const defaults: CardsConfig = {
+// Tablet / mobile values are explicit, editable defaults (see the viewport icons on each responsive field).
+export const defaults: CardsConfig = withOverrides<CardsConfig>({
   widgetId: 'customCards',
   showDescription: true,
   button1Show: true,
@@ -95,17 +101,24 @@ export const defaults: CardsConfig = {
   borderRadius: 10,
   cardWidth: 370,
   cardHeight: 245,
+  cardMinWidth: 260,
+  aspectRatio: 'auto',
   borderWidth: 0,
   borderColor: '#0079c2',
   titleBackground: true,
   cardColor: '#0079c2',
   contentVertical: 'center',
   contentHorizontal: 'center',
-  titleFont: typography({ size: 28, weight: 700, lineHeight: 1.5, color: '#ffffff', transform: 'capitalize', clamp: true, lines: 2 }),
+  titleFont: typography({ size: 28, weight: 700, lineHeight: 1.5, color: '#ffffff', transform: 'capitalize', clamp: true, lines: 2, fluid: true, minSize: 18 }),
   descriptionFont: typography({ size: 15, weight: 400, lineHeight: 1.4, color: '#ffffff', clamp: true, lines: 3 }),
   button1Style: buttonStyle({ background: '#0079c2', hoverBackground: '#ffffff', hoverColor: '#0079c2', borderWidth: 1, borderColor: '#ffffff', radius: 40, paddingX: 20, paddingY: 11, font: typography({ size: 14, weight: 700, lineHeight: 1, color: '#ffffff', transform: 'uppercase' }) }),
   button2Style: buttonStyle({ background: '#0079c2', hoverBackground: '#ffffff', hoverColor: '#0079c2', borderWidth: 1, borderColor: '#ffffff', radius: 40, paddingX: 20, paddingY: 11, font: typography({ size: 14, weight: 700, lineHeight: 1, color: '#ffffff', transform: 'uppercase' }) }),
-}
+}, {
+  'cardsPerRow@tablet': 2,
+  'cardsPerRow@mobile': 1,
+  'titleFont@tablet': typography({ size: 24, weight: 700, lineHeight: 1.5, color: '#ffffff', transform: 'capitalize', clamp: true, lines: 2, fluid: true, minSize: 18 }),
+  'titleFont@mobile': typography({ size: 22, weight: 700, lineHeight: 1.5, color: '#ffffff', transform: 'capitalize', clamp: true, lines: 2, fluid: true, minSize: 18 }),
+})
 
 const URL_TIP = "Each card's button renders only when the card has that button's URL (and the button has a label)."
 
@@ -133,7 +146,7 @@ export const schema: Schema<CardsConfig> = {
   widget: [
     { type: 'text', key: 'widgetId', label: 'Widget ID' },
     { type: 'stepper', key: 'cardCount', label: 'Number of cards', min: 1, max: MAX_CARDS },
-    { type: 'stepper', key: 'cardsPerRow', label: 'Cards per row', min: 1, max: 6, help: 'Tablet caps at 2, mobile at 1' },
+    { type: 'stepper', key: 'cardsPerRow', label: 'Cards per row', min: 1, max: 6, responsive: true },
     { type: 'switch', key: 'fitSpace', label: 'Fit space', hint: 'Cards grow to fill the row when there are fewer of them' },
     {
       type: 'group',
@@ -164,6 +177,7 @@ export const schema: Schema<CardsConfig> = {
         {
           type: 'slider',
           key: 'cardWidth',
+          responsive: true,
           label: 'Card width',
           min: 160,
           max: 520,
@@ -171,7 +185,34 @@ export const schema: Schema<CardsConfig> = {
           unit: 'px',
           help: 'Maximum width (ignored when Fit space is on)',
         },
-        { type: 'slider', key: 'cardHeight', label: 'Card height', min: 160, max: 520, step: 5, unit: 'px', visibleWhen: (c) => c.shape === 'square' },
+        {
+          type: 'select',
+          key: 'aspectRatio',
+          label: 'Aspect ratio',
+          responsive: true,
+          visibleWhen: (c) => c.shape === 'square',
+          tip: 'Keeps the image proportions at any card width. Auto uses the card height instead.',
+          options: [
+            { value: 'auto', label: 'Auto (use card height)' },
+            { value: '1 / 1', label: '1 : 1 (square)' },
+            { value: '4 / 3', label: '4 : 3' },
+            { value: '3 / 2', label: '3 : 2' },
+            { value: '16 / 9', label: '16 : 9' },
+            { value: '3 / 4', label: '3 : 4 (portrait)' },
+          ],
+        },
+        { type: 'slider', key: 'cardHeight', label: 'Card height', min: 160, max: 520, step: 5, unit: 'px', responsive: true, visibleWhen: (c) => c.shape === 'square' && c.aspectRatio === 'auto' },
+        {
+          type: 'slider',
+          key: 'cardMinWidth',
+          label: 'Card min width',
+          min: 0,
+          max: 480,
+          step: 10,
+          unit: 'px',
+          responsive: true,
+          tip: 'Cards never get narrower than this: they wrap to the next row instead. 0 = no minimum.',
+        },
         { type: 'color', key: 'cardColor', label: 'Card color', help: 'Title background and hover overlay' },
         { type: 'slider', key: 'borderWidth', label: 'Border width', min: 0, max: 12, unit: 'px', help: 'Border style: solid' },
         { type: 'color', key: 'borderColor', label: 'Border color', visibleWhen: (c) => c.borderWidth > 0 },
@@ -185,6 +226,7 @@ export const schema: Schema<CardsConfig> = {
         {
           type: 'segmented',
           key: 'contentVertical',
+          responsive: true,
           label: 'Vertical position',
           options: [
             { value: 'top', label: 'Top' },
@@ -195,6 +237,7 @@ export const schema: Schema<CardsConfig> = {
         {
           type: 'segmented',
           key: 'contentHorizontal',
+          responsive: true,
           label: 'Horizontal position',
           options: [
             { value: 'left', label: 'Left' },
@@ -208,8 +251,8 @@ export const schema: Schema<CardsConfig> = {
       type: 'group',
       label: 'Typography',
       fields: [
-        { type: 'typography', key: 'titleFont', label: 'Title' },
-        { type: 'typography', key: 'descriptionFont', label: 'Description' },
+        { type: 'typography', key: 'titleFont', label: 'Title', responsive: true },
+        { type: 'typography', key: 'descriptionFont', label: 'Description', responsive: true },
       ],
     },
     {

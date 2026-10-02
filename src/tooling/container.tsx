@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { outputPath, previewUrl } from './assets'
+import { profile } from './outputProfile'
+import { responsive, withOverrides } from './responsive'
 import type { Sheet } from './stylesheet'
 import type { FieldDef, GroupField } from './types'
 
@@ -19,7 +21,7 @@ export type ContainerConfig = {
   containerBgPosition: 'center' | 'top' | 'bottom' | 'left' | 'right'
 }
 
-export const containerDefaults: ContainerConfig = {
+export const containerDefaults: ContainerConfig = withOverrides<ContainerConfig>({
   useContainer: false,
   containerWidth: 'full',
   containerMaxWidth: 1440,
@@ -28,9 +30,10 @@ export const containerDefaults: ContainerConfig = {
   containerBgColor: '#ffffff',
   containerBgImage: 'sample:blobs',
   containerBgPosition: 'center',
-}
+}, { 'containerPadding@mobile': 24 })
 
 const on = (c: ContainerConfig) => c.useContainer
+const CLS = profile.classNames
 
 export const containerFields: FieldDef<ContainerConfig>[] = [
   { type: 'switch', key: 'useContainer', label: 'Uses container', hint: 'Wrap the widget in a section with its own width and background' },
@@ -59,7 +62,7 @@ export const containerFields: FieldDef<ContainerConfig>[] = [
         unit: 'px',
         tip: 'Keeps the widget readable while the background spans the full container.',
       },
-      { type: 'slider', key: 'containerPadding', label: 'Padding', min: 0, max: 120, step: 4, unit: 'px' },
+      { type: 'slider', key: 'containerPadding', label: 'Padding', min: 0, max: 120, step: 4, unit: 'px', responsive: true },
       { type: 'color', key: 'containerBgColor', label: 'Background color' },
       { type: 'image', key: 'containerBgImage', label: 'Background image', tip: 'Images always cover the container.' },
       {
@@ -83,17 +86,19 @@ export const containerFields: FieldDef<ContainerConfig>[] = [
 export const containerOptionFields = (containerFields[1] as GroupField<ContainerConfig>).fields
 
 /** `selector` lets other features (e.g. Combiner sections) reuse the container styles under their own scope. */
-export function containerSheet(c: ContainerConfig, mode: 'preview' | 'output', selector = '.widget-container', title = 'Container'): Sheet | null {
+export function containerSheet(c: ContainerConfig, mode: 'preview' | 'output', selector = `.${CLS.container}`, title = 'Container'): Sheet | null {
   if (!c.useContainer) return null
   const image = mode === 'preview' ? previewUrl(c.containerBgImage) : outputPath(c.containerBgImage)
   const boxed = c.containerWidth === 'boxed'
+  const pad = responsive(c, 'containerPadding')
   return {
     scope: selector,
     title,
     vars: [
       { name: 'container-bg-color', value: c.containerBgColor, group: 'Colors' },
       ...(boxed ? [{ name: 'container-max-width', value: `${c.containerMaxWidth}px`, group: 'Layout' as const }] : []),
-      { name: 'container-padding', value: `${c.containerPadding}px`, group: 'Layout' },
+      { name: 'container-padding', value: `${pad.desktop}px`, group: 'Layout' },
+      ...(['tablet', 'mobile'] as const).flatMap((vp) => (pad[vp] === undefined ? [] : [{ name: `container-padding-${vp}`, value: `${pad[vp]}px`, group: 'Layout' as const }])),
       { name: 'content-max-width', value: `${c.contentMaxWidth}px`, group: 'Layout' },
     ],
     rules: [
@@ -111,9 +116,10 @@ export function containerSheet(c: ContainerConfig, mode: 'preview' | 'output', s
           'background-repeat': image ? 'no-repeat' : undefined,
           'background-position': image ? c.containerBgPosition : undefined,
         },
-        nest: [{ sel: '& > .widget-container-inner', decls: { 'max-width': '$$content-max-width', margin: '0 auto' } }],
+        nest: [{ sel: `& > .${CLS.containerInner}`, decls: { 'max-width': '$$content-max-width', margin: '0 auto' } }],
       },
-      { media: 'mobile', rules: [{ sel: selector, decls: { padding: 'calc($$container-padding * 0.5)' } }] },
+      { media: 'tablet', rules: [{ sel: selector, decls: { padding: pad.tablet === undefined ? undefined : '$$container-padding-tablet' } }] },
+      { media: 'mobile', rules: [{ sel: selector, decls: { padding: pad.mobile === undefined ? undefined : '$$container-padding-mobile' } }] },
     ],
   }
 }
@@ -124,14 +130,14 @@ export function wrapHtml(c: ContainerConfig, html: string): string {
     .split('\n')
     .map((l) => (l ? `    ${l}` : l))
     .join('\n')
-  return `<section class="widget-container">\n  <div class="widget-container-inner">\n${inner}\n  </div>\n</section>`
+  return `<section class="${CLS.container}">\n  <div class="${CLS.containerInner}">\n${inner}\n  </div>\n</section>`
 }
 
 export function ContainerPreview({ config, children }: { config: ContainerConfig; children: ReactNode }) {
   if (!config.useContainer) return <>{children}</>
   return (
-    <section className="widget-container">
-      <div className="widget-container-inner">{children}</div>
+    <section className={CLS.container}>
+      <div className={CLS.containerInner}>{children}</div>
     </section>
   )
 }

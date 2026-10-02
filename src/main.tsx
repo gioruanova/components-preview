@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { lazy, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { Toaster } from 'sonner'
@@ -11,8 +11,19 @@ import './index.css'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Layout } from './app/Layout'
 import { HomePage } from './app/HomePage'
-import { CombinerPage } from './combiner/CombinerPage'
 import { CategoryPage, NotFound, WidgetPage } from './app/pages'
+
+// After a new deploy, an open tab may request a lazy chunk that no longer exists → reload once to get the new build
+window.addEventListener('vite:preloadError', (event) => {
+  if (sessionStorage.getItem('chunk-reload')) return
+  sessionStorage.setItem('chunk-reload', '1')
+  event.preventDefault()
+  window.location.reload()
+})
+window.addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('chunk-reload'), 10_000))
+
+// Heavy, rarely-first routes are code-split (dnd-kit etc. only load when the Combiner opens)
+const CombinerPage = lazy(() => import('./combiner/CombinerPage').then((m) => ({ default: m.CombinerPage })))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

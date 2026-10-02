@@ -1,6 +1,7 @@
 import type { Schema } from '@/tooling/types'
 import { buttonStyle, type ButtonStyle } from '@/tooling/buttons'
 import { widthFields, type WidthConfig } from '@/tooling/layout'
+import { withOverrides } from '@/tooling/responsive'
 import { typography, type Typography } from '@/tooling/typography'
 
 export type Alignment = 'left' | 'center' | 'right'
@@ -24,6 +25,9 @@ export type SeoBlockConfig = WidthConfig & {
   titleFont: Typography
   title2Font: Typography
   descriptionFont: Typography
+  paddingY: number
+  paddingX: number
+  buttonsStack: boolean
   backgroundColor: string
   borderRadius: number
   borderWidth: number
@@ -35,7 +39,8 @@ export type SeoBlockConfig = WidthConfig & {
 }
 
 // Base styles follow the existing Saffire widget (saffire-docs-poc).
-export const defaults: SeoBlockConfig = {
+// Tablet / mobile values are explicit, editable defaults (see the viewport icons on each responsive field).
+export const defaults: SeoBlockConfig = withOverrides<SeoBlockConfig>({
   widgetId: 'customSeoBlock',
   showTitle: true,
   titleLine1: 'Join thousands of members',
@@ -64,7 +69,20 @@ export const defaults: SeoBlockConfig = {
   buttonColor: '#0079c2',
   button1Style: buttonStyle(),
   button2Style: buttonStyle({ background: '#f26922', hoverBackground: '#c4521a' }),
-}
+  paddingY: 50,
+  paddingX: 50,
+  buttonsStack: false,
+}, {
+  'paddingY@tablet': 40,
+  'paddingX@tablet': 24,
+  'paddingY@mobile': 32,
+  'paddingX@mobile': 16,
+  'titleFont@tablet': typography({ size: 31, weight: 700, lineHeight: 1.2, transform: 'capitalize' }),
+  'title2Font@tablet': typography({ size: 31, weight: 400, lineHeight: 1.2, transform: 'capitalize' }),
+  'titleFont@mobile': typography({ size: 27, weight: 700, lineHeight: 1.2, transform: 'capitalize' }),
+  'title2Font@mobile': typography({ size: 27, weight: 400, lineHeight: 1.2, transform: 'capitalize' }),
+  'buttonsStack@mobile': true,
+})
 
 const URL_TIP = "Without a URL (and a label) the button won't be rendered."
 
@@ -115,6 +133,7 @@ export const schema: Schema<SeoBlockConfig> = {
       type: 'segmented',
       key: 'alignment',
       label: 'Content alignment',
+      responsive: true,
       options: [
         { value: 'left', label: 'Left' },
         { value: 'center', label: 'Center' },
@@ -125,9 +144,9 @@ export const schema: Schema<SeoBlockConfig> = {
       type: 'group',
       label: 'Typography',
       fields: [
-        { type: 'typography', key: 'titleFont', label: 'Title line 1' },
-        { type: 'typography', key: 'title2Font', label: 'Title line 2' },
-        { type: 'typography', key: 'descriptionFont', label: 'Description' },
+        { type: 'typography', key: 'titleFont', label: 'Title line 1', responsive: true },
+        { type: 'typography', key: 'title2Font', label: 'Title line 2', responsive: true },
+        { type: 'typography', key: 'descriptionFont', label: 'Description', responsive: true },
       ],
     },
     {
@@ -135,6 +154,8 @@ export const schema: Schema<SeoBlockConfig> = {
       label: 'Block',
       fields: [
         ...widthFields<SeoBlockConfig>({ min: 480, max: 1530 }),
+        { type: 'slider', key: 'paddingY', label: 'Padding vertical', min: 0, max: 120, step: 2, unit: 'px', responsive: true },
+        { type: 'slider', key: 'paddingX', label: 'Padding horizontal', min: 0, max: 120, step: 2, unit: 'px', responsive: true },
         { type: 'color', key: 'backgroundColor', label: 'Background color' },
         { type: 'slider', key: 'borderRadius', label: 'Border radius', min: 0, max: 48, unit: 'px' },
         { type: 'slider', key: 'borderWidth', label: 'Border width', min: 0, max: 12, unit: 'px', help: 'Border style: solid' },
@@ -147,6 +168,7 @@ export const schema: Schema<SeoBlockConfig> = {
       label: 'Buttons',
       visibleWhen: (c) => c.button1Show || c.button2Show,
       fields: [
+        { type: 'switch', key: 'buttonsStack', label: 'Stack buttons', hint: 'One under the other, at natural width', responsive: true },
         { type: 'color', key: 'buttonColor', label: 'Default button color', help: 'Used by buttons without a custom style' },
         { type: 'buttonStyle', key: 'button1Style', label: 'Button 1 · custom style', visibleWhen: (c) => c.button1Show },
         { type: 'buttonStyle', key: 'button2Style', label: 'Button 2 · custom style', visibleWhen: (c) => c.button2Show },

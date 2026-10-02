@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 
 const SWATCHES = ['#007bc7', '#005b94', '#003c61', '#f26922', '#66bb6a', '#daf1ff', '#ffffff', '#f0f0f0', '#222222', '#000000']
-export const TRANSPARENT = '#00000000'
+const TRANSPARENT = '#00000000'
 
 /** Checkerboard so transparent / semi-transparent colors are visible. */
 const CHECKER = 'repeating-conic-gradient(#d4dbe2 0% 25%, #ffffff 0% 50%) 50% / 8px 8px'

@@ -1,5 +1,4 @@
 import { useEffect, useSyncExternalStore } from 'react'
-import confetti from 'canvas-confetti'
 import { ExternalLink, Navigation, X } from 'lucide-react'
 
 /**
@@ -27,9 +26,12 @@ export function notifyCenter(kind: Notice['kind'], title: string, url: string) {
   window.clearTimeout(timer)
   timer = window.setTimeout(close, VISIBLE_MS)
   emit()
-  const base = { disableForReducedMotion: true, colors: BRAND, zIndex: 70, origin: { x: 0.5, y: 0.5 } }
-  confetti({ ...base, particleCount: 110, spread: 80, startVelocity: 38 })
-  window.setTimeout(() => confetti({ ...base, particleCount: 70, spread: 120, startVelocity: 26, scalar: 0.8 }), 160)
+  // loaded on first click only (keeps it out of the main bundle)
+  void import('canvas-confetti').then(({ default: confetti }) => {
+    const base = { disableForReducedMotion: true, colors: BRAND, zIndex: 70, origin: { x: 0.5, y: 0.5 } }
+    confetti({ ...base, particleCount: 110, spread: 80, startVelocity: 38 })
+    window.setTimeout(() => confetti({ ...base, particleCount: 70, spread: 120, startVelocity: 26, scalar: 0.8 }), 160)
+  })
 }
 
 export function CenterNotice() {

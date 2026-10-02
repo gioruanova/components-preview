@@ -1,9 +1,12 @@
+import { lazy } from 'react'
 import { ArrowRight, ChevronRight, Hourglass } from 'lucide-react'
 import { Link, useParams } from 'react-router'
-import { ComponentPage } from '@/tooling/ComponentPage'
 import { findCategory, findUpcoming, findWidget, type RegisteredCategory } from '@/tooling/registry'
 import { StatusBadge } from '@/tooling/ui'
 import { ComingSoon } from './ComingSoon'
+
+// Code-split: config panel, iframe preview and code highlighting load with the first component page
+const ComponentPage = lazy(() => import('@/tooling/ComponentPage').then((m) => ({ default: m.ComponentPage })))
 
 export function CategoryPage() {
   const category = findCategory(useParams().category)

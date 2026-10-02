@@ -19,6 +19,11 @@ type BaseField<C extends Config> = {
   help?: string
   /** Short explanation shown in an info tooltip next to the label. */
   tip?: string
+  /**
+   * Allow different values per viewport (stored as `<key>@tablet` / `<key>@mobile`, inheriting).
+   * Read them in styles.ts with `responsive(c, key)` from tooling/responsive.
+   */
+  responsive?: boolean
   /** Hide the field when this returns false (e.g. radius only for square cards). */
   visibleWhen?: (config: C) => boolean
 }
@@ -26,13 +31,6 @@ type BaseField<C extends Config> = {
 export type TextField<C extends Config> = BaseField<C> & { type: 'text'; placeholder?: string }
 export type TextareaField<C extends Config> = BaseField<C> & { type: 'textarea'; rows?: number }
 export type SwitchField<C extends Config> = BaseField<C> & { type: 'switch'; hint?: string }
-/** A switch plus the input it enables (e.g. Show title + title text). `key` is the text, `toggleKey` the boolean. */
-export type SwitchTextField<C extends Config> = BaseField<C> & {
-  type: 'switchText'
-  toggleKey: Extract<keyof C, string>
-  multiline?: boolean
-  placeholder?: string
-}
 export type SelectField<C extends Config> = BaseField<C> & { type: 'select'; options: Option[] }
 export type SegmentedField<C extends Config> = BaseField<C> & { type: 'segmented'; options: Option[] }
 /** Backgrounds/shapes/borders allow transparency by default; set `solid` for colors that must be opaque. */
@@ -74,7 +72,6 @@ export type LeafField<C extends Config> =
   | TextField<C>
   | TextareaField<C>
   | SwitchField<C>
-  | SwitchTextField<C>
   | SelectField<C>
   | SegmentedField<C>
   | ColorField<C>

@@ -50,7 +50,8 @@ describe('cards styles', () => {
 
   it('positions content and uses the card color for the title background', () => {
     const css = toCss([styles({ ...defaults, contentVertical: 'bottom', contentHorizontal: 'left' })])
-    expect(css).toMatch(/\.card-content \{[^}]*justify-content: flex-end;[^}]*align-items: flex-start;/)
+    expect(css).toMatch(/\.card-content \{[^}]*justify-content: flex-end;/)
+    expect(css).toMatch(/\.card-content \{[^}]*align-items: flex-start;/)
     expect(css).toMatch(/\.widget-title-wrapper \{[^}]*background-color: var\(--card-color\);/)
     expect(toCss([styles({ ...defaults, titleBackground: false })])).toMatch(/\.widget-title-wrapper \{[^}]*background-color: transparent;/)
   })
@@ -65,7 +66,8 @@ describe('cards styles', () => {
   it('clamps text only when enabled', () => {
     expect(toCss([styles(defaults)])).toMatch(/\.widget-title \{[^}]*-webkit-line-clamp: 2;/)
     const off = toCss([styles({ ...defaults, titleFont: { ...defaults.titleFont, clamp: false } })])
-    expect(off).not.toMatch(/\.widget-title \{[^}]*-webkit-line-clamp/)
+    const desktopOnly = off.slice(0, off.indexOf('@media')) // tablet/mobile keep their own (clamped) overrides
+    expect(desktopOnly).not.toMatch(/\.widget-title \{[^}]*-webkit-line-clamp/)
   })
 
   it('keeps the hover reveal on mobile', () => {

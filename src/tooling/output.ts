@@ -1,6 +1,8 @@
 import { containerDefaults, containerFields, containerSheet, wrapHtml, type ContainerConfig } from './container'
 import { json } from './codegen'
 import { toCss, toScss, type Sheet } from './stylesheet'
+import { profile, type CodeTabId } from './outputProfile'
+import type { RegisteredWidget } from './registry'
 import type { CodeFile, Config, FieldDef, WidgetDefinition } from './types'
 
 /** Adds the global container options to a widget's defaults and schema (unless it opts out). */
@@ -27,16 +29,29 @@ export function previewCss(def: WidgetDefinition<Config>, config: Config): strin
   return toCss(sheets(def, config, 'preview'))
 }
 
-/** All output tabs: HTML, SCSS, CSS, Script, Data. */
-export function outputFiles(def: WidgetDefinition<Config>, config: Config): CodeFile[] {
+const COMMENT: Record<CodeTabId, (t: string) => string> = {
+  html: (t) => `<!-- ${t} -->`,
+  scss: (t) => `// ${t}`,
+  css: (t) => `/* ${t} */`,
+  script: (t) => `// ${t}`,
+  data: () => '', // JSON has no comments
+}
+
+/** Output tabs, in the order/labels/headers defined by the output profile. */
+export function outputFiles(def: RegisteredWidget, config: Config): CodeFile[] {
   const code = def.codegen(config)
   const html = def.container === false ? code.html : wrapHtml(config as ContainerConfig, code.html)
   const s = sheets(def, config, 'output')
-  return [
-    { id: 'html', label: 'HTML', language: 'markup', code: html },
-    { id: 'scss', label: 'SCSS', language: 'css', code: toScss(s) },
-    { id: 'css', label: 'CSS', language: 'css', code: toCss(s) },
-    { id: 'script', label: 'Script', language: 'javascript', code: code.script },
-    { id: 'data', label: 'Data', language: 'json', code: json(code.data) },
-  ]
+  const files: Record<CodeTabId, Omit<CodeFile, 'label'>> = {
+    html: { id: 'html', language: 'markup', code: html },
+    scss: { id: 'scss', language: 'css', code: toScss(s) },
+    css: { id: 'css', language: 'css', code: toCss(s) },
+    script: { id: 'script', language: 'javascript', code: code.script },
+    data: { id: 'data', language: 'json', code: json(code.data) },
+  }
+  return profile.tabs.map((id) => {
+    const header = profile.header?.(id, def)
+    const comment = header ? COMMENT[id](header) : ''
+    return { ...files[id], label: profile.labels[id], code: comment ? `${comment}\n${files[id].code}` : files[id].code }
+  })
 }

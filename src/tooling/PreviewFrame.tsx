@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { cn } from '@/lib/utils'
+import { useViewport } from './viewport'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
-export const VIEWPORTS = [
+const VIEWPORTS = [
   { id: 'desktop', label: 'Desktop', width: 1280, icon: Monitor },
   { id: 'tablet', label: 'Tablet', width: 768, icon: Tablet },
   { id: 'mobile', label: 'Mobile', width: 375, icon: Smartphone },
@@ -217,7 +218,8 @@ type Props = {
 }
 
 export function PreviewFrame({ css, empty, children }: Props) {
-  const [viewport, setViewport] = useState<ViewportId>('desktop')
+  // shared with responsive fields: previewing Tablet = editing Tablet values
+  const { viewport, setViewport } = useViewport()
   const [stageRef, available] = useWidth<HTMLDivElement>(800)
   const [popup, setPopup] = useState(false)
 
