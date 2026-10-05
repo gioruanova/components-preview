@@ -1,7 +1,8 @@
 import { ArrowRight, Code2, Folder, Layers, LayoutPanelTop, MonitorSmartphone, Puzzle, SlidersHorizontal, Users } from 'lucide-react'
-import { Link } from 'react-router'
+import { Link, Navigate } from 'react-router'
 import { categories } from '@/tooling/registry'
 import { StatusBadge, TestingPocBadge } from '@/tooling/ui'
+import { hasSeenBenchmark } from './benchmarkVisit'
 import { SoonBadge } from './pages'
 
 const GOALS = [
@@ -45,6 +46,8 @@ const STEPS = [
 ]
 
 export function HomePage() {
+  // first visit: show the benchmark presentation once (it marks itself as seen), then the tool starts here
+  if (!hasSeenBenchmark()) return <Navigate to="/benchmark" replace />
   const total = categories.reduce((n, c) => n + c.widgets.length, 0)
   const planned = categories.reduce((n, c) => n + c.upcomingWidgets.length + (c.widgets.length || c.upcomingWidgets.length ? 0 : 1), 0)
   const first = categories[0]?.widgets[0]
