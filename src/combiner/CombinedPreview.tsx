@@ -5,22 +5,26 @@ import { previewCss } from '@/tooling/output'
 import { profile } from '@/tooling/outputProfile'
 import { PreviewFrame } from '@/tooling/PreviewFrame'
 import { toCss } from '@/tooling/stylesheet'
-import { findWidgetByKey, renderedColumns, type Layout } from './model'
+import { findWidgetByKey, isItemRendered, renderedColumns, type Layout } from './model'
 import { headingOf, headingSheet, isHeadingEmpty, SectionHeadingPreview } from './sectionHeading'
-import { GUIDES_CSS, sectionSheets } from './sections'
+import { GUIDES_CSS, isSectionRendered, sectionSheets } from './sections'
 
 /** All sections + their components rendered in one iframe (same viewports and popup as component pages). */
 export function CombinedPreview({ layout, guides }: { layout: Layout; guides: boolean }) {
   const uploads = useUploads()
 
+  // sections whose columns are all empty (and without heading) are removed, like on the site
+  const sections = layout.sections.filter(isSectionRendered)
+
   const css = useMemo(() => {
     const sectionCss = toCss(
-      layout.sections.flatMap((s) => {
+      sections.flatMap((s) => {
         const h = headingOf(s)
         return [...sectionSheets(s), ...(isHeadingEmpty(h) ? [] : [headingSheet(`#cs-${s.id}`, h, `${s.settings.name} — heading`)])]
       }),
     )
-    const itemCss = [...(layout.siteHeader ? [layout.siteHeader] : []), ...layout.sections.flatMap((s) => s.columns.flatMap((c) => c.items))]
+    const items = sections.flatMap((s) => s.columns.flatMap((c) => c.items.filter((i) => isItemRendered(i, s))))
+    const itemCss = [...(layout.siteHeader ? [layout.siteHeader] : []), ...items]
       .map((item) => {
         const widget = findWidgetByKey(item.widget)
         // the section container provides the spacing: no extra wrapper padding
@@ -42,23 +46,24 @@ export function CombinedPreview({ layout, guides }: { layout: Layout; guides: bo
   return (
     <PreviewFrame css={css} empty={false}>
       {siteHeader}
-      {layout.sections.length === 0 ? (
-        <p style={{ padding: 48, textAlign: 'center', color: '#5b6672', font: '15px system-ui, sans-serif' }}>Add a section to start building.</p>
+      {sections.length === 0 ? (
+        <p style={{ padding: 48, textAlign: 'center', color: '#5b6672', font: '15px system-ui, sans-serif' }}>
+          {layout.sections.length ? 'Every section is empty, so none is rendered (as on the site).' : 'Add a section to start building.'}
+        </p>
       ) : (
-        layout.sections.map((s) => (
+        sections.map((s) => (
           <section key={s.id} id={`cs-${s.id}`} className="combiner-section" data-label={s.settings.name}>
             <div className={profile.classNames.containerInner}>
               {/* section heading: inside the container, outside (above) the columns wrapper */}
               <SectionHeadingPreview heading={headingOf(s)} />
               <div className="combiner-columns">
                 {/* empty columns are dropped, so the other columns take the full width */}
-                {renderedColumns(s).map(({ column: col, index: i }) => (
+                {renderedColumns(s).map(({ column: col }) => (
                   <div key={col.id} className="combiner-column">
-                    {col.items.length === 0 && guides && <div className="combiner-empty">Empty column {i + 1}</div>}
                     {col.items.map((item) => {
                       const widget = findWidgetByKey(item.widget)
-                      if (!widget) return null
-                      if (widget.isEmpty?.(item.config)) return null // removed widgets render nothing, like on the site
+                      // removed (or simulated empty) widgets render nothing, like on the site
+                      if (!widget || !isItemRendered(item, s)) return null
                       const { Preview } = widget
                       return (
                         <ContainerPreview key={item.id} config={item.config as ContainerConfig}>

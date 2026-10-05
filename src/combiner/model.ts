@@ -28,7 +28,8 @@ export type SectionSettings = Omit<ContainerConfig, 'useContainer'> & {
 export type Item = { id: string; widget: string; config: Config }
 export type Column = { id: string; items: Item[] }
 /** `heading` (optional) is merged with defaults on read (`headingOf`); it renders above the columns wrapper. */
-export type Section = { id: string; settings: SectionSettings; heading?: Partial<SectionHeading>; columns: Column[] }
+/** `simulateEmpty`: preview-only switch — treat every component of the section as empty (tests the empty rules). */
+export type Section = { id: string; settings: SectionSettings; heading?: Partial<SectionHeading>; columns: Column[]; simulateEmpty?: boolean }
 /** `siteHeader`: optional page header above all sections; only Header components can go there. */
 export type Layout = { version: 1; siteHeader?: Item; sections: Section[] }
 
@@ -111,8 +112,12 @@ export function columnFractions(s: SectionSettings): number[] {
   return (s.columns === 2 ? s.ratio2 : s.ratio3).split(':').map(Number)
 }
 
-/** An item renders something (its widget exists and isn't "removed" via `isEmpty`). */
-export function isItemRendered(item: Item): boolean {
+/**
+ * An item renders something: its widget exists, isn't "removed" via `isEmpty`, and its section doesn't simulate empty
+ * widgets.
+ */
+export function isItemRendered(item: Item, section?: Section): boolean {
+  if (section?.simulateEmpty) return false
   const widget = findWidgetByKey(item.widget)
   return !!widget && !widget.isEmpty?.(item.config)
 }
@@ -121,13 +126,18 @@ export function isItemRendered(item: Item): boolean {
  * Columns that are actually rendered, with their `fr` share.
  * An empty column (no rendered items) is dropped, so the other columns take its space
  * (2 columns with one empty → the other is 100%; 2:1:1 with the last empty → 2:1).
- * When every column is empty, all of them are kept so the structure stays visible.
+ * When every column is empty, none is rendered and the whole section (heading included) is removed.
  */
 export function renderedColumns(section: Section): { column: Column; index: number; fraction: number }[] {
   const fractions = columnFractions(section.settings)
-  const all = section.columns.map((column, index) => ({ column, index, fraction: fractions[index] ?? 1 }))
-  const filled = all.filter((c) => c.column.items.some(isItemRendered))
-  return filled.length ? filled : all
+  return section.columns
+    .map((column, index) => ({ column, index, fraction: fractions[index] ?? 1 }))
+    .filter((c) => c.column.items.some((i) => isItemRendered(i, section)))
+}
+
+/** Turns the section's "Simulated empty widgets" preview switch on / off. */
+export function setSimulateEmpty(layout: Layout, sectionId: string, on: boolean): Layout {
+  return mapSection(layout, sectionId, (s) => ({ ...s, simulateEmpty: on }))
 }
 
 // ---------- immutable operations ----------
@@ -337,6 +347,7 @@ export function loadLayout(): Layout {
         return {
           id: s.id,
           settings,
+          ...(s.simulateEmpty ? { simulateEmpty: true } : {}),
           ...(heading ? { heading } : {}),
           columns: resizeColumns(
             (s.columns ?? []).map((c) => ({

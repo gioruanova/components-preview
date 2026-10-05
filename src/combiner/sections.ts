@@ -64,6 +64,9 @@ export const sectionFields: FieldDef<SectionSettings>[] = [
   { type: 'group', label: 'Container', fields: containerFields as never },
 ]
 
+/** A section is removed from the page (heading included) when all its columns are empty. */
+export const isSectionRendered = (s: Section) => renderedColumns(s).length > 0
+
 /** Container (width, background…) + column grid styles for one section, scoped by its id. */
 export function sectionSheets(s: Section): Sheet[] {
   const sel = `#cs-${s.id}`

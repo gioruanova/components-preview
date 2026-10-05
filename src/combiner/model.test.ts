@@ -9,6 +9,8 @@ import {
   findItem,
   findWidgetByKey,
   isHeaderWidget,
+  isItemRendered,
+  setSimulateEmpty,
   removeSiteHeader,
   setSiteHeader,
   updateItemConfig,
@@ -22,7 +24,7 @@ import {
   type Layout,
   type SectionSettings,
 } from './model'
-import { sectionSheets } from './sections'
+import { isSectionRendered, sectionSheets } from './sections'
 
 const empty = (): Layout => ({ version: 1, sections: [] })
 const cards = findWidgetByKey('cards/cards-grid')!
@@ -71,7 +73,8 @@ describe('combiner model', () => {
   })
 
   it('turns proportions into grid tracks that stack on small screens', () => {
-    const l = addSection(empty(), { columns: 3, ratio3: '1:2:1', columnGap: 16 })
+    let l = addSection(empty(), { columns: 3, ratio3: '1:2:1', columnGap: 16 })
+    for (const col of l.sections[0].columns) l = addItem(l, col.id, cards).layout // empty columns aren't rendered
     expect(columnFractions(l.sections[0].settings)).toEqual([1, 2, 1])
     const css = toCss(sectionSheets(l.sections[0]))
     expect(css).toContain('grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);')
@@ -118,8 +121,9 @@ describe('combiner model', () => {
   it('drops empty columns so the others take the full width', () => {
     let l = addSection(empty(), { columns: 2, ratio2: '2:1' })
     const [a, b] = l.sections[0].columns
-    // all empty → structure kept
-    expect(renderedColumns(l.sections[0]).map((c) => c.index)).toEqual([0, 1])
+    // all empty → no column, and the section is removed (no heading)
+    expect(renderedColumns(l.sections[0])).toEqual([])
+    expect(isSectionRendered(l.sections[0])).toBe(false)
     l = addItem(l, b.id, cards).layout
     expect(renderedColumns(l.sections[0]).map((c) => c.index)).toEqual([1])
     expect(toCss(sectionSheets(l.sections[0]))).toContain('grid-template-columns: minmax(0, 1fr);')
@@ -138,6 +142,27 @@ describe('combiner model', () => {
     // once it has content, both columns are back with their proportions
     l = addItem(l, a.id, seo).layout
     expect(renderedColumns(l.sections[0]).map((c) => c.fraction)).toEqual([2, 1])
+  })
+
+  it('removes a section with empty columns even when it has a heading', () => {
+    const l = addSection(empty(), { columns: 2 })
+    const withHeading = { ...l.sections[0], heading: { showHeading: true, heading: 'Coming up' } }
+    expect(isSectionRendered(withHeading)).toBe(false)
+  })
+
+  it('"Simulated empty widgets" treats every component of the section as empty', () => {
+    let l = addSection(empty(), { columns: 2 })
+    const [a, b] = l.sections[0].columns
+    l = addItem(l, a.id, cards).layout
+    l = addItem(l, b.id, seo).layout
+    expect(renderedColumns(l.sections[0])).toHaveLength(2)
+    l = setSimulateEmpty(l, l.sections[0].id, true)
+    expect(isItemRendered(l.sections[0].columns[0].items[0], l.sections[0])).toBe(false)
+    expect(renderedColumns(l.sections[0])).toEqual([])
+    expect(isSectionRendered(l.sections[0])).toBe(false)
+    expect(l.sections[0].columns[0].items).toHaveLength(1) // components are kept, only hidden
+    l = setSimulateEmpty(l, l.sections[0].id, false)
+    expect(renderedColumns(l.sections[0])).toHaveLength(2)
   })
 
   it('keeps the proportions of the remaining columns', () => {

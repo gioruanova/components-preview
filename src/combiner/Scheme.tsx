@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Copy, GripVertical, Heading, PanelTop, Pencil, Plus, Replace, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { categories } from '@/tooling/registry'
@@ -38,6 +39,7 @@ import {
   removeSection,
   removeSiteHeader,
   renderedColumns,
+  setSimulateEmpty,
   setSiteHeader,
   type Column,
   type Item,
@@ -45,6 +47,7 @@ import {
   type Section,
 } from './model'
 import { headingOf, isHeadingEmpty } from './sectionHeading'
+import { isSectionRendered } from './sections'
 import type { Selection } from './useLayout'
 
 type Props = {
@@ -162,6 +165,7 @@ export function Scheme({ layout, update, updateWithUndo, selection, select }: Pr
                 update(() => r.layout)
                 select({ type: 'item', id: r.item.id })
               }}
+              onSimulateEmpty={(on) => update((l) => setSimulateEmpty(l, section.id, on))}
               onDuplicate={() => update((l) => duplicateSection(l, section.id))}
               onRemove={() => {
                 if (selection?.type === 'section' && selection.id === section.id) select(null)
@@ -230,13 +234,14 @@ type SectionCardProps = {
   selection: Selection
   select: (s: Selection) => void
   onAdd: (columnId: string, widgetKey: string) => void
+  onSimulateEmpty: (on: boolean) => void
   onDuplicate: () => void
   onRemove: () => void
   onItemDuplicate: (id: string) => void
   onItemRemove: (id: string) => void
 }
 
-function SectionCard({ section, index, selection, select, onAdd, onDuplicate, onRemove, onItemDuplicate, onItemRemove }: SectionCardProps) {
+function SectionCard({ section, index, selection, select, onAdd, onSimulateEmpty, onDuplicate, onRemove, onItemDuplicate, onItemRemove }: SectionCardProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: S(section.id),
     data: { type: 'section' },
@@ -262,16 +267,24 @@ function SectionCard({ section, index, selection, select, onAdd, onDuplicate, on
         >
           <GripVertical className="size-4" />
         </button>
-        <button type="button" onClick={() => select({ type: 'section', id: section.id })} className="min-w-0 flex-1 text-left">
-          <span className="block truncate text-sm font-semibold">
-            <span className="mr-1.5 text-xs text-muted-foreground tabular-nums">{index + 1}.</span>
-            {s.name}
-          </span>
-          <span className="block text-xs text-muted-foreground">
-            {s.columns} column{s.columns > 1 ? 's' : ''}
-            {s.columns > 1 && ` · ${fractions.join(':')}`} · {s.containerWidth === 'full' ? 'Full width' : `Boxed ${s.containerMaxWidth}px`}
-          </span>
-        </button>
+        <div className="min-w-0 flex-1">
+          <button type="button" onClick={() => select({ type: 'section', id: section.id })} className="block w-full text-left">
+            <span className="block truncate text-sm font-semibold">
+              <span className="mr-1.5 text-xs text-muted-foreground tabular-nums">{index + 1}.</span>
+              {s.name}
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {s.columns} column{s.columns > 1 ? 's' : ''}
+              {s.columns > 1 && ` · ${fractions.join(':')}`} · {s.containerWidth === 'full' ? 'Full width' : `Boxed ${s.containerMaxWidth}px`}
+            </span>
+          </button>
+          {/* preview-only: treat this section's components as empty to check what collapses */}
+          <label className="mt-1 flex w-fit cursor-pointer items-center gap-1.5 text-xs">
+            <Switch checked={!!section.simulateEmpty} onCheckedChange={onSimulateEmpty} className="scale-75" aria-label={`Simulated empty widgets in ${s.name}`} />
+            <span className={cn(section.simulateEmpty ? 'font-medium text-[#b4470e]' : 'text-muted-foreground')}>Simulated empty widgets</span>
+          </label>
+          {!isSectionRendered(section) && <span className="block text-[11px] font-medium text-[#b4470e]">Empty: removed from the page</span>}
+        </div>
         <IconAction label="Edit section" onClick={() => select({ type: 'section', id: section.id })}>
           <Pencil />
         </IconAction>
