@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Copy, GripVertical, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Copy, GripVertical, Heading, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -34,11 +34,13 @@ import {
   moveSection,
   removeItem,
   removeSection,
+  renderedColumns,
   type Column,
   type Item,
   type Layout,
   type Section,
 } from './model'
+import { headingOf, isHeadingEmpty } from './sectionHeading'
 import type { Selection } from './useLayout'
 
 type Props = {
@@ -178,6 +180,31 @@ export function Scheme({ layout, update, updateWithUndo, selection, select }: Pr
   )
 }
 
+/** The section's optional heading/description (rendered above its columns wrapper). */
+function HeadingRow({ section, selected, onEdit }: { section: Section; selected: boolean; onEdit: () => void }) {
+  const h = headingOf(section)
+  const on = !isHeadingEmpty(h)
+  const parts = [h.showHeading && h.headingLevel.toUpperCase(), h.showDescription && 'description'].filter(Boolean).join(' + ')
+  return (
+    <div
+      className={cn(
+        'mx-2 mt-2 flex items-center gap-1.5 rounded-md border px-1.5 py-1',
+        on ? 'border-brand-green/50 bg-brand-green/5' : 'border-dashed bg-muted/30',
+        selected && 'ring-2 ring-brand-blue',
+      )}
+    >
+      <Heading className={cn('ml-1 size-3.5 shrink-0', on ? 'text-[#2e7d32]' : 'text-muted-foreground')} />
+      <button type="button" onClick={onEdit} className="min-w-0 flex-1 truncate text-left text-xs">
+        <span className="font-semibold">Heading</span>
+        <span className="text-muted-foreground"> · {on ? `${parts} · “${h.showHeading ? h.heading : h.description}”` : 'none (optional, above the columns)'}</span>
+      </button>
+      <IconAction label={`Edit heading of ${section.settings.name}`} onClick={onEdit} small>
+        <Pencil />
+      </IconAction>
+    </div>
+  )
+}
+
 type SectionCardProps = {
   section: Section
   index: number
@@ -197,6 +224,7 @@ function SectionCard({ section, index, selection, select, onAdd, onDuplicate, on
   })
   const selected = selection?.type === 'section' && selection.id === section.id
   const fractions = columnFractions(section.settings)
+  const rendered = new Set(renderedColumns(section).map((c) => c.column.id))
   const s = section.settings
 
   return (
@@ -236,9 +264,10 @@ function SectionCard({ section, index, selection, select, onAdd, onDuplicate, on
         </IconAction>
       </div>
 
+      <HeadingRow section={section} selected={selection?.type === 'heading' && selection.id === section.id} onEdit={() => select({ type: 'heading', id: section.id })} />
       <div className="flex gap-2 p-2" style={{ background: tint(s.containerBgColor) }}>
         {section.columns.map((col, i) => (
-          <ColumnDrop key={col.id} column={col} index={i} grow={fractions[i] ?? 1}>
+          <ColumnDrop key={col.id} column={col} index={i} grow={fractions[i] ?? 1} hidden={!rendered.has(col.id)}>
             {col.items.map((item) => (
               <ItemChip
                 key={item.id}
@@ -257,7 +286,8 @@ function SectionCard({ section, index, selection, select, onAdd, onDuplicate, on
   )
 }
 
-function ColumnDrop({ column, index, grow, children }: { column: Column; index: number; grow: number; children: ReactNode }) {
+/** `hidden`: empty while another column has content → not rendered, the other columns take its width. */
+function ColumnDrop({ column, index, grow, hidden, children }: { column: Column; index: number; grow: number; hidden: boolean; children: ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: C(column.id), data: { type: 'column' } })
   return (
     <div
@@ -265,7 +295,10 @@ function ColumnDrop({ column, index, grow, children }: { column: Column; index: 
       style={{ flexGrow: grow, flexBasis: 0 }}
       className={cn('flex min-w-0 flex-col gap-1.5 rounded-lg border border-dashed border-border bg-muted/40 p-1.5 transition-colors', isOver && 'border-brand-blue bg-brand-sky/50')}
     >
-      <span className="px-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">Col {index + 1}</span>
+      <span className="px-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+        Col {index + 1}
+        {hidden && <span className="font-normal tracking-normal normal-case" title="Empty columns are not rendered: the other columns take the full width"> · empty, hidden</span>}
+      </span>
       <SortableContext items={column.items.map((i) => I(i.id))} strategy={verticalListSortingStrategy}>
         {children}
       </SortableContext>

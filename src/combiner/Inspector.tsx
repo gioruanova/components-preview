@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { ConfigPanel } from '@/tooling/ConfigPanel'
 import { FieldRenderer } from '@/tooling/fields/FieldRenderer'
 import type { Config } from '@/tooling/types'
-import { findItem, findWidgetByKey, updateItemConfig, updateSectionSettings, type Layout, type SectionSettings } from './model'
+import { findItem, findWidgetByKey, updateItemConfig, updateSectionHeading, updateSectionSettings, type Layout, type SectionSettings } from './model'
+import { headingOf, headingSchema } from './sectionHeading'
 import { sectionFields } from './sections'
 import type { Selection } from './useLayout'
 
@@ -14,14 +15,27 @@ type Props = {
   update: (fn: (l: Layout) => Layout) => void
 }
 
-/** Settings for the selected section or component. */
+/** Settings for the selected section, section heading or component. */
 export function Inspector({ layout, selection, onClose, update }: Props) {
   if (!selection) {
     return (
       <div className="rounded-xl border border-dashed bg-card/60 p-5 text-center text-sm text-muted-foreground">
         <Settings2 className="mx-auto mb-2 size-5" />
-        Select a section or a component in the scheme to edit its settings.
+        Select a section, its heading or a component in the scheme to edit its settings.
       </div>
+    )
+  }
+
+  if (selection.type === 'heading') {
+    const section = layout.sections.find((s) => s.id === selection.id)
+    if (!section) return null
+    const onChange = (key: string, value: unknown) => update((l) => updateSectionHeading(l, section.id, key, value))
+    return (
+      <Panel title={`Heading · ${section.settings.name}`} onClose={onClose}>
+        <div className="p-3">
+          <ConfigPanel key={`heading-${section.id}`} schema={headingSchema} config={headingOf(section)} onChange={onChange} />
+        </div>
+      </Panel>
     )
   }
 

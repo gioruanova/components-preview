@@ -39,13 +39,54 @@ describe('cards codegen', () => {
 })
 
 describe('cards styles', () => {
-  it('lets cards grow to fill the row with "fit space"', () => {
-    const fixed = toCss([styles({ ...defaults, cardCount: 2 })])
-    const fit = toCss([styles({ ...defaults, cardCount: 2, fitSpace: true })])
+  it('card sizing: "Keep card size" = equal widths (flex 0 1) in a centered row, "Stretch to fill" = flex 1 1', () => {
+    const fixed = toCss([styles({ ...defaults, cardMinWidth: 0, cardCount: 2 })])
+    const stretch = toCss([styles({ ...defaults, cardCount: 2, cardSizing: 'stretch' })])
+    expect(fixed).toMatch(/#customCards \{[^}]*justify-content: center;/)
     expect(fixed).toContain('flex: 0 1 calc((100% - 1 * var(--cards-gap)) / 2);')
-    expect(fixed).toContain('max-width: var(--card-width);')
-    expect(fit).toContain('flex: 1 1 calc((100% - 1 * var(--cards-gap)) / 2);')
-    expect(fit).not.toContain('max-width: var(--card-width);')
+    expect(stretch).toContain('flex: 1 1 calc((100% - 1 * var(--cards-gap)) / 2);')
+    expect(stretch).not.toContain('@container')
+  })
+
+  it('"Keep card size" picks the cards per row from the grid width: k fit when width >= k * min + (k - 1) * gap', () => {
+    const css = toCss([styles(defaults)]) // 4 per row, min 260px, gap 20px
+    expect(css).toMatch(/#customCards \{[^}]*container-name: cards-grid;[^}]*container-type: inline-size;/)
+    const desktop = css.slice(0, css.indexOf('@media'))
+    expect(desktop).toMatch(/#customCards \.card-widget-item \{[^}]*flex: 0 1 100%;/) // narrower than 2 cards
+    expect(desktop).toMatch(/@container cards-grid \(min-width: 540px\) \{\s*#customCards \.card-widget-item \{\s*flex: 0 1 calc\(\(100% - 1 \* var\(--cards-gap\)\) \/ 2\);/)
+    expect(desktop).toContain('@container cards-grid (min-width: 820px)')
+    expect(desktop).toMatch(/@container cards-grid \(min-width: 1100px\) \{\s*#customCards \.card-widget-item \{\s*flex: 0 1 calc\(\(100% - 3 \* var\(--cards-gap\)\) \/ 4\);/)
+    expect(desktop).not.toContain('min-width: 1380px') // never more than cards per row
+    // tablet (2 per row): resets the base and only adds its own step; mobile (1 per row): no steps
+    const tablet = css.slice(css.indexOf('@media (max-width: 768px)'), css.indexOf('@media (max-width: 480px)'))
+    expect(tablet).toContain('flex: 0 1 100%;')
+    expect(tablet.match(/@container/g)).toHaveLength(1)
+    const mobile = css.slice(css.indexOf('@media (max-width: 480px)'))
+    expect(mobile).not.toContain('@container')
+  })
+
+  it('"Keep card size" without a min width needs no container queries', () => {
+    const css = toCss([styles({ ...defaults, cardMinWidth: 0, 'cardMinWidth@tablet': 0 } as typeof defaults)])
+    expect(css).not.toContain('@container')
+    expect(css).not.toContain('container-name')
+    expect(css).toContain('flex: 0 1 calc((100% - 3 * var(--cards-gap)) / 4);')
+  })
+
+  it('"Limit card width" controls max-width independently of sizing', () => {
+    expect(toCss([styles({ ...defaults, cardSizing: 'stretch' })])).toContain('max-width: var(--card-width);') // stretch, but capped
+    expect(toCss([styles({ ...defaults, limitWidth: false })])).not.toContain('max-width: var(--card-width);')
+  })
+
+  it('both options can change per viewport', () => {
+    const css = toCss([styles({ ...defaults, 'cardSizing@mobile': 'stretch', 'limitWidth@mobile': false } as typeof defaults)])
+    const mobile = css.slice(css.indexOf('@media (max-width: 480px)'))
+    expect(mobile).toContain('flex: 1 1 100%;')
+    expect(mobile).toContain('max-width: none;')
+    const back = toCss([styles({ ...defaults, cardSizing: 'stretch', 'cardSizing@tablet': 'fixed' } as typeof defaults)])
+    expect(back.slice(0, back.indexOf('@media'))).not.toContain('@container')
+    const tablet = back.slice(back.indexOf('@media (max-width: 768px)'), back.indexOf('@media (max-width: 480px)'))
+    expect(tablet).toContain('flex: 0 1 100%;')
+    expect(tablet).toContain('@container cards-grid (min-width: 540px)')
   })
 
   it('positions content and uses the card color for the title background', () => {

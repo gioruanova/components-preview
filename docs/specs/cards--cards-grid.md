@@ -13,7 +13,7 @@
 - The description and each button are shown or hidden for the whole widget at once — not per card.
 - A button only renders on a given card when that card actually has the matching URL.
 - A card with no description and no buttons is rendered as non-interactive (no hover state, no link).
-- Cards per row applies on desktop; tablet shows at most 2 per row and mobile 1. With "Fit space" on, cards grow to fill the row.
+- Cards per row applies on desktop; tablet shows at most 2 per row and mobile 1. "Card sizing": Keep card size (equal-width cards that fill full rows; a short last row is centered) or Stretch to fill (flex row, `flex: 1 1`). "Limit card width" adds `max-width: $card-width`.
 - The title (and on hover the description and buttons) can be positioned top, center or bottom and left, center or right.
 - Hovering (or tapping on touch devices) reveals the description and buttons on every viewport, mobile included.
 
@@ -56,7 +56,8 @@
 | B | Widget ID | widgetId | text | customCards | | |
 | B | Number of cards | cardCount | stepper | 4 | 1–12 | |
 | B | Cards per row | cardsPerRow | stepper | 4 | 1–6 | |
-| B | Fit space | fitSpace | switch | off | | |
+| C | Card sizing | cardSizing | segmented | fixed | fixed ("Keep card size", equal widths, cards per row from the grid width) / stretch ("Stretch to fill", flex 1 1) | | responsive |
+| C | Limit card width | limitWidth | switch | on | | | responsive · max-width: card width |
 | C | Grid width | widthMode / maxWidth | segmented + slider | Max width 1530 | Max width / 100% | |
 | C | Shape | shape | segmented | square | square / circle | |
 | C | Border radius | borderRadius | slider | 10 | 0–40 px | shape = square |
@@ -77,12 +78,15 @@
 
 Responsive (per viewport): cards per row (tablet 2, mobile 1), card width, min width, height, aspect ratio, content position, title (fluid, cqi; tablet 24px, mobile 22px) and description typography.
 
-Container options are added automatically.
+Container options are added automatically. The outer wrapper's padding is the shared widget spacing (`20px 15px`), dropped when a container or Layout builder section already provides spacing (see docs/reference.md → Container).
 
 ## 7. Rendering rules
 - Base look from the existing widget: card color background, centered rounded title bar (max 75%), shadow; on hover the overlay slides down from the top, the image zooms ×1.15, the title bar turns transparent and the description and buttons fade in. Buttons are outlined white pills.
 - Title background on → the card color fills the title bar and the hover overlay. Off → transparent title with a text shadow and a dark overlay.
-- Fit space on → cards grow (`flex: 1 1`) and ignore the card width, so fewer cards fill the row.
+- Card sizing "Stretch to fill" → `display: flex` + `flex: 1 1 <basis>` (cards grow into the leftover space of their row; a short last row gets wider cards).
+- Card sizing "Keep card size" → `flex: 0 1 <basis(k)>` in the centered flex row: every card has the same width and full rows fill the full width of the grid (e.g. inside a Layout builder column); a short last row keeps that width and is centered. `k` (cards per row) comes from the grid width with container queries on `#<widgetId>` (`container: cards-grid / inline-size`): k cards fit when width ≥ k × min + (k − 1) × gap, at most N (Cards per row). Base `flex: 0 1 100%` (below 2 cards), then `@container cards-grid (min-width: <step>px)` for each extra card. Without a min width there are no queries: `flex: 0 1 <basis(N)>`. In a media block the base `flex` is re-set whenever the sizing (mode, per row, min width) changes, which resets the inherited queries, followed by only that viewport's own steps (those ≤ the breakpoint).
+- A card capped by "Limit card width" stays centered in the row.
+- "Limit card width" on → `max-width: $card-width` (also when stretching); off → no max-width (`none` in an override).
 - Content position sets the alignment of the title and the hover content inside the card.
 - Circle shape forces a 1:1 card using the width.
 

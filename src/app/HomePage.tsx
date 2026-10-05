@@ -33,12 +33,12 @@ const GOALS = [
   {
     icon: Puzzle,
     title: 'Built to grow',
-    text: 'New components and whole component families are added from a short spec, keeping the same consistent experience.',
+    text: 'New components and whole component categories are added from a short spec, keeping the same consistent experience.',
   },
 ]
 
 const STEPS = [
-  { n: 1, title: 'Pick a component', text: 'Browse by family in the sidebar or the tabs above.' },
+  { n: 1, title: 'Pick a component', text: 'Browse by category in the sidebar or the tabs above.' },
   { n: 2, title: 'Configure it', text: 'A · Content, B · Widget configuration, C · Styles.' },
   { n: 3, title: 'Check every viewport', text: 'Switch between Desktop, Tablet and Mobile.' },
   { n: 4, title: 'Copy the code', text: 'HTML, SCSS, CSS, Script and Data — one click each.' },
@@ -56,7 +56,7 @@ export function HomePage() {
         <div aria-hidden className="pointer-events-none absolute -bottom-32 left-1/3 size-80 rounded-full bg-brand-orange/20 blur-3xl" />
         <div className="relative max-w-3xl">
           <p className="mb-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-wide uppercase">
-            {categories.length} families · {total} live components · {planned} coming soon
+            {categories.length} categories · {total} live components · {planned} coming soon
           </p>
           <h1 className="text-4xl leading-tight font-black tracking-tight sm:text-5xl">Components Live Preview</h1>
           <p className="mt-4 max-w-2xl text-lg text-white/85">
@@ -102,7 +102,7 @@ export function HomePage() {
       </section>
 
       <Link
-        to="/combiner"
+        to="/layout-builder"
         className="group flex flex-col gap-4 rounded-2xl border border-brand-orange/30 bg-gradient-to-r from-brand-orange/10 to-brand-sky/40 p-6 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center"
       >
         <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-white text-brand-blue shadow-sm">
@@ -110,7 +110,7 @@ export function HomePage() {
         </span>
         <span className="flex-1">
           <span className="flex flex-wrap items-center gap-2">
-            <span className="text-lg font-bold text-brand-navy">Combiner</span>
+            <span className="text-lg font-bold text-brand-navy">Layout builder</span>
             <TestingPocBadge />
           </span>
           <span className="mt-1 block text-sm text-muted-foreground">

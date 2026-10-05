@@ -11,6 +11,7 @@ import {
   moveItem,
   moveSection,
   removeItem,
+  renderedColumns,
   updateSectionSettings,
   type Layout,
 } from './model'
@@ -69,5 +70,38 @@ describe('combiner model', () => {
     expect(css).toContain('grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);')
     expect(css).toContain('@media (max-width: 480px)')
     expect(css).toContain(`#cs-${l.sections[0].id} {`)
+  })
+
+  it('drops empty columns so the others take the full width', () => {
+    let l = addSection(empty(), { columns: 2, ratio2: '2:1' })
+    const [a, b] = l.sections[0].columns
+    // all empty → structure kept
+    expect(renderedColumns(l.sections[0]).map((c) => c.index)).toEqual([0, 1])
+    l = addItem(l, b.id, cards).layout
+    expect(renderedColumns(l.sections[0]).map((c) => c.index)).toEqual([1])
+    expect(toCss(sectionSheets(l.sections[0]))).toContain('grid-template-columns: minmax(0, 1fr);')
+    // a column holding only "removed" (isEmpty) widgets still counts as empty
+    const withSeo = addItem(l, a.id, seo)
+    const hide = { showTitle: false, showDescription: false, button1Show: false, button2Show: false }
+    const removed: Layout = {
+      ...withSeo.layout,
+      sections: withSeo.layout.sections.map((s) => ({
+        ...s,
+        columns: s.columns.map((c) => ({ ...c, items: c.items.map((i) => (i.id === withSeo.item.id ? { ...i, config: { ...i.config, ...hide } } : i)) })),
+      })),
+    }
+    expect(seo.isEmpty?.(removed.sections[0].columns[0].items[0].config)).toBe(true)
+    expect(renderedColumns(removed.sections[0]).map((c) => c.index)).toEqual([1])
+    // once it has content, both columns are back with their proportions
+    l = addItem(l, a.id, seo).layout
+    expect(renderedColumns(l.sections[0]).map((c) => c.fraction)).toEqual([2, 1])
+  })
+
+  it('keeps the proportions of the remaining columns', () => {
+    let l = addSection(empty(), { columns: 3, ratio3: '2:1:1' })
+    const [a, , c] = l.sections[0].columns
+    l = addItem(l, a.id, cards).layout
+    l = addItem(l, c.id, cards).layout
+    expect(toCss(sectionSheets(l.sections[0]))).toContain('grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);')
   })
 })

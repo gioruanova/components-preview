@@ -72,7 +72,7 @@
 
 Responsive (per viewport): alignment, title line 1/2 and description typography (tablet 31px, mobile 27px titles), padding, stack buttons.
 
-Container options are added automatically.
+Container options are added automatically. The outer wrapper's padding is the shared widget spacing (`20px 15px`), dropped when a container or Layout builder section already provides spacing (see docs/reference.md → Container).
 
 ## 7. Rendering rules
 - Both title lines render inside the heading; line 2 in `<span class="seo-title-line2">`.

@@ -1,7 +1,7 @@
 import { containerOptionFields, containerSheet } from '@/tooling/container'
 import type { Sheet } from '@/tooling/stylesheet'
 import type { FieldDef } from '@/tooling/types'
-import { columnFractions, type Section, type SectionSettings } from './model'
+import { renderedColumns, type Section, type SectionSettings } from './model'
 
 const containerFields = containerOptionFields as unknown as FieldDef<SectionSettings>[]
 
@@ -18,11 +18,11 @@ export const sectionFields: FieldDef<SectionSettings>[] = [
         label: 'Proportions',
         visibleWhen: (s) => s.columns === 2,
         options: [
-          { value: '1:1', label: '1 : 1 (50 / 50)' },
-          { value: '2:1', label: '2 : 1 (66 / 33)' },
-          { value: '1:2', label: '1 : 2 (33 / 66)' },
-          { value: '3:1', label: '3 : 1 (75 / 25)' },
-          { value: '1:3', label: '1 : 3 (25 / 75)' },
+          { value: '1:1', label: '1 : 1 (50% / 50%)' },
+          { value: '2:1', label: '2 : 1 (66% / 33%)' },
+          { value: '1:2', label: '1 : 2 (33% / 66%)' },
+          { value: '3:1', label: '3 : 1 (75% / 25%)' },
+          { value: '1:3', label: '1 : 3 (25% / 75%)' },
         ],
       },
       {
@@ -31,10 +31,10 @@ export const sectionFields: FieldDef<SectionSettings>[] = [
         label: 'Proportions',
         visibleWhen: (s) => s.columns === 3,
         options: [
-          { value: '1:1:1', label: '1 : 1 : 1 (equal)' },
-          { value: '2:1:1', label: '2 : 1 : 1 (wide first)' },
-          { value: '1:2:1', label: '1 : 2 : 1 (wide middle)' },
-          { value: '1:1:2', label: '1 : 1 : 2 (wide last)' },
+          { value: '1:1:1', label: '1 : 1 : 1 (33% / 33% / 33%)' },
+          { value: '2:1:1', label: '2 : 1 : 1 (50% / 25% / 25%)' },
+          { value: '1:2:1', label: '1 : 2 : 1 (25% / 50% / 25%)' },
+          { value: '1:1:2', label: '1 : 1 : 2 (25% / 25% / 50%)' },
         ],
       },
       { type: 'slider', key: 'gap', label: 'Gap', min: 0, max: 80, step: 4, unit: 'px' },
@@ -65,8 +65,9 @@ export const sectionFields: FieldDef<SectionSettings>[] = [
 /** Container (width, background…) + column grid styles for one section, scoped by its id. */
 export function sectionSheets(s: Section): Sheet[] {
   const sel = `#cs-${s.id}`
-  const tracks = columnFractions(s.settings)
-    .map((f) => `minmax(0, ${f}fr)`)
+  // empty columns are not rendered: the remaining ones share the full width
+  const tracks = renderedColumns(s)
+    .map((c) => `minmax(0, ${c.fraction}fr)`)
     .join(' ')
   const container = containerSheet({ ...s.settings, useContainer: true }, 'preview', sel, s.settings.name)
   const grid: Sheet = {
@@ -93,6 +94,7 @@ export const GUIDES_CSS = `
     padding: 2px 8px; border-bottom-right-radius: 6px;
     background: #007bc7; color: #fff; font: 600 11px/1.6 system-ui, sans-serif;
   }
+  .section-heading { outline: 1px dashed rgba(102, 187, 106, 0.8); outline-offset: 4px; }
   .combiner-column { outline: 1px dashed rgba(242, 105, 34, 0.55); outline-offset: 2px; min-height: 48px; }
   .combiner-empty {
     display: grid; place-items: center; min-height: 96px; border-radius: 8px;

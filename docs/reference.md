@@ -5,7 +5,7 @@ Detailed reference for building and changing components. `CLAUDE.md` has the sho
 ## Source map
 ```
 src/
-  main.tsx               routes (Combiner + component pages are code-split with React.lazy)
+  main.tsx               routes (Layout builder + component pages are code-split with React.lazy)
   index.css              Tailwind tokens (brand colors), global pointer-cursor rule, keyframes
   app/                   shell: Layout (header, tabs, collapsible sidebar, footer, idea button), Sidebar,
                          HomePage, pages (category / component / coming soon), ComingSoon, IdeaButton
@@ -27,13 +27,13 @@ src/
     previewLinks.tsx     previewLinkClick(url) → CenterNotice (centered message + confetti)
     ComponentPage.tsx · ConfigPanel.tsx · PreviewFrame.tsx · CodeOutput.tsx · ui.tsx
     fields/              FieldRenderer + controls (ColorPicker, SliderControl, Stepper, Typography, ButtonStyle, ImagePicker)
-  combiner/              model.ts (pure ops + persistence) · sections.ts · Scheme.tsx (dnd-kit) · Inspector · CombinedPreview
+  combiner/              Layout builder (/layout-builder): model.ts (pure ops + persistence) · sections.ts · Scheme.tsx (dnd-kit) · Inspector · CombinedPreview
   widgets/<category>/<component>/   index.ts · schema.ts · Preview.tsx · styles.ts · codegen.ts · codegen.test.ts
 .claude/skills/          new-component (+ templates/) · update-component · new-category · adopt-source-structure
 ```
 
 ## Ordering
-- Families sort by `order` in `category.ts`. Components sort by `order` in `index.ts`.
+- Categories sort by `order` in `category.ts`. Components sort by `order` in `index.ts`.
 - Lower comes first, ties sort alphabetically, and a missing order counts as 100.
 - `upcoming` items keep their array order and come after the built components.
 - Sorting is done by `byOrder` in `tooling/registry.ts`.
@@ -74,6 +74,7 @@ Every field accepts `visibleWhen(config)`, `help` and `tip` (an info tooltip). L
 - In `styles.ts`: `const r = responsive(c, 'key')` → `r.desktop`, `r.tablet` / `r.mobile` (only when they change, otherwise undefined) and `r.at[vp]` (effective values). Build an `at(vp)` rule whose declarations use `r[vp]`. Undefined declarations are dropped, so media blocks only contain real differences.
 - Typography: `responsiveType(prefix, responsive(c, 'xFont'), fluidOptions?)` → `base` / `tablet` / `mobile` (decls + clamp) and `vars`. Overrides get their own variables (`$x-font-size-tablet`).
 - **Media overrides must use the same selectors and nesting as the base rules** (same specificity). `standards.test.ts` fails otherwise.
+- Container queries: a `ContainerBlock` (`{ container: name, minWidth, rules }`) renders `@container <name> (min-width: Npx)`, at sheet level or inside a media block. Use it for rules that depend on the width the widget gets (e.g. inside a Layout builder column) rather than the viewport. The ancestor needs `container-name` + `container-type: inline-size`, and the rules reuse the base selectors. Example: cards-grid "Keep card size".
 - Already responsive: SEO alignment, padding, typography and "Stack buttons". Cards per row, width, min width, height, aspect ratio, content position and typography. Container padding.
 
 ## Fluid typography
@@ -97,7 +98,8 @@ Every field accepts `visibleWhen(config)`, `help` and `tip` (an info tooltip). L
   - Boxed (max width) or Full width (edge to edge).
   - Inner content max width and padding.
   - Background color, and background image + position (always cover).
-- Markup: `.{profile.classNames.container} > .{containerInner}`. The Combiner reuses the same fields (`containerOptionFields`) per section.
+- Markup: `.{profile.classNames.container} > .{containerInner}`. The Layout builder reuses the same fields (`containerOptionFields`) per section.
+- **Widget spacing (one rule for all widgets).** Each widget keeps its own outer wrapper from the real Saffire markup (`.{widgetId}-container`, `.{widgetId}-signup-container`…, the sheet `scope`, where the CSS variables live), but **widgets never set padding on it**. The tooling adds `padding: WIDGET_SPACING` (`20px 15px`, `container.tsx` → `withWrapperSpacing`) only when nothing around it provides spacing. With "Uses container" on, or inside a Layout builder section (`previewCss(…, { inContainer: true })`), the container padding (and the column gap) is the only spacing, so the wrapper gets none. Covered by `output.test.ts`. Padding *inside* a widget's own box (e.g. the SEO block's background box) is a widget style and stays in C.
 
 ## Buttons and links
 - Buttons are generic Button 1 / Button 2. The label and URL are Content, and "Show button N" is in Widget configuration.
@@ -106,8 +108,10 @@ Every field accepts `visibleWhen(config)`, `help` and `tip` (an info tooltip). L
 - External = a different origin than the current page (`currentOrigin()`). There is no base-URL option. External links get `target/rel/aria-label`.
 - Preview clicks never navigate. They show a centered "Navigating to section" or "Opening external URL in a new tab" message with confetti.
 
-## Combiner (Testing POC)
+## Layout builder (Testing POC) — code in `src/combiner/`
+- Optional **section heading + description** per section (`sectionHeading.tsx`): rendered inside the section's container, **outside and above the columns wrapper** (`.section-heading` before `.combiner-columns`). Stored as `section.heading` (merged with `headingDefaults`; copied on duplicate; a legacy layout-level heading migrates to the first section on load). Edited from the section card's "Heading" row like a component: A texts, B show/hide + heading tag (H1–H6), C alignment, per-viewport typography, max width, gap and space below. Styles are scoped per section (`#cs-<id> .section-heading`). Covered by `sectionHeading.test.ts` (standards included).
 - A layout is made of sections (a container plus 1–3 columns, proportions, gap, alignment and "stack on tablet").
+- **Empty columns are not rendered** (`renderedColumns()` in `model.ts`): a column with no rendered items (none, or only widgets that are "removed" via `isEmpty`) is dropped and the remaining columns share the width with their own proportions (2 columns with one empty → 100%; 2:1:1 with the last empty → 2:1). When every column is empty, all are kept so the structure stays visible. The scheme still shows the column (to drop components in), labelled "empty, hidden".
 - Columns hold component instances, each with its own widget config. Widget IDs are unique per layout.
 - Drag and drop uses dnd-kit. Ids are prefixed `s:` (sections), `c:` (columns) and `i:` (items).
 - The layout is saved to localStorage (`live-preview:combiner:v1`). On load, unknown components are dropped and new defaults are merged in.
@@ -119,11 +123,11 @@ Every field accepts `visibleWhen(config)`, `help` and `tip` (an info tooltip). L
 - Widget defaults follow saffire-docs-poc: `#0079c2`, `#313841`, Poppins. Preview fonts are in `typography.ts → FONTS`.
 
 ## Deployment
-- This is a single-page app: the host must serve `index.html` for every route, or reloading `/combiner` or `/<category>/<component>` returns a 404.
+- This is a single-page app: the host must serve `index.html` for every route, or reloading `/layout-builder` or `/<category>/<component>` returns a 404.
   - `vercel.json` (rewrite) and `public/_redirects` (Netlify) handle this.
   - On other hosts, add the equivalent "SPA fallback" rule.
 - `main.tsx` reloads once on `vite:preloadError`, so tabs left open across a deploy recover instead of failing to load a lazy page.
 
 ## Performance notes
-- Component pages, the Combiner and confetti are lazy-loaded. Keep heavy libraries out of `tooling/registry` imports (widgets load eagerly for the nav).
+- Component pages, the Layout builder and confetti are lazy-loaded. Keep heavy libraries out of `tooling/registry` imports (widgets load eagerly for the nav).
 - If the widget count grows a lot (dozens), split each widget into an eager `meta` and a lazy `index` to keep the main bundle small.

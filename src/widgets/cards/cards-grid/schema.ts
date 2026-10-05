@@ -22,7 +22,10 @@ export type CardsConfig = WidthConfig & {
   cardCount: number
   items: CardItem[]
   cardsPerRow: number
-  fitSpace: boolean
+  /** 'stretch' = flex row, cards grow into the leftover space of their row (flex: 1 1); 'fixed' = equal widths (flex: 0 1), cards per row picked from the grid width so full rows fill it; a short last row is centered. */
+  cardSizing: 'stretch' | 'fixed'
+  /** Cards never get wider than `cardWidth` (max-width). */
+  limitWidth: boolean
   shape: 'square' | 'circle'
   borderRadius: number
   cardWidth: number
@@ -94,7 +97,8 @@ export const defaults: CardsConfig = withOverrides<CardsConfig>({
     },
   ],
   cardsPerRow: 4,
-  fitSpace: false,
+  cardSizing: 'fixed',
+  limitWidth: true,
   widthMode: 'max',
   maxWidth: 1530,
   shape: 'square',
@@ -147,7 +151,6 @@ export const schema: Schema<CardsConfig> = {
     { type: 'text', key: 'widgetId', label: 'Widget ID' },
     { type: 'stepper', key: 'cardCount', label: 'Number of cards', min: 1, max: MAX_CARDS },
     { type: 'stepper', key: 'cardsPerRow', label: 'Cards per row', min: 1, max: 6, responsive: true },
-    { type: 'switch', key: 'fitSpace', label: 'Fit space', hint: 'Cards grow to fill the row when there are fewer of them' },
     {
       type: 'group',
       label: 'Show / hide',
@@ -175,6 +178,24 @@ export const schema: Schema<CardsConfig> = {
         },
         { type: 'slider', key: 'borderRadius', label: 'Border radius', min: 0, max: 40, unit: 'px', visibleWhen: (c) => c.shape === 'square' },
         {
+          type: 'segmented',
+          key: 'cardSizing',
+          label: 'Card sizing',
+          responsive: true,
+          options: [
+            { value: 'fixed', label: 'Keep card size' },
+            { value: 'stretch', label: 'Stretch to fill' },
+          ],
+          help: 'Keep: every card has the same width and full rows fill the full width (fewer per row when they would get narrower than the min width); a short last row is centered. Stretch: cards grow into the empty space of their own row, so a short last row gets wider cards.',
+        },
+        {
+          type: 'switch',
+          key: 'limitWidth',
+          label: 'Limit card width',
+          hint: 'Cards never get wider than the Card width below',
+          responsive: true,
+        },
+        {
           type: 'slider',
           key: 'cardWidth',
           responsive: true,
@@ -183,7 +204,8 @@ export const schema: Schema<CardsConfig> = {
           max: 520,
           step: 10,
           unit: 'px',
-          help: 'Maximum width (ignored when Fit space is on)',
+          help: 'Cards never get wider than this',
+          visibleWhen: (c) => c.limitWidth,
         },
         {
           type: 'select',

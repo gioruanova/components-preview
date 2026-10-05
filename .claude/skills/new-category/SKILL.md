@@ -1,6 +1,6 @@
 ---
 name: new-category
-description: Create a new component category (family) in Components Live Preview — a new sidebar group, category tab and homepage catalog entry under src/widgets/<slug>/. Use when a spec says "Category: NEW" or the user asks for a new component family.
+description: Create a new component category in Components Live Preview — a new sidebar group, category tab and homepage catalog entry under src/widgets/<slug>/. Use when a spec says "Category: NEW" or the user asks for a new component category.
 argument-hint: "<Category name> [description]"
 ---
 
@@ -17,13 +17,13 @@ A category is a folder `src/widgets/<slug>/` with a `category.ts`. The registry 
 
    export default defineCategory({
      name: '<Name>',
-     description: '<One sentence about this family of components.>',
+     description: '<One sentence about this category of components.>',
      order: <n>,
    })
    ```
-4. Only create `src/widgets/<slug>/shared/` when two or more components in the family will share CSS or codegen helpers. The registry ignores `shared/`. Never put an `index.ts` widget definition there.
+4. Only create `src/widgets/<slug>/shared/` when two or more components in the category will share CSS or codegen helpers. The registry ignores `shared/`. Never put an `index.ts` widget definition there.
 5. To list components that aren't built yet, add `upcoming: [{ name, summary }]` to `category.ts`. Each one gets a "coming soon" page at `/<slug>/<slugified-name>`. When you later build one with `/new-component`, use the same slug and the placeholder disappears automatically.
 6. A category with no components and no `upcoming` items shows a "coming soon" page. Usually continue straight into `/new-component` for its first child.
-6. Run `npm run typecheck`.
+7. Run `npm run typecheck`.
 
 Follow the conventions in `CLAUDE.md`.

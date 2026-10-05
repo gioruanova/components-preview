@@ -12,7 +12,7 @@ export function CategoryPage() {
   const category = findCategory(useParams().category)
   if (!category) return <NotFound />
 
-  // A family with nothing in it yet is itself "coming soon"
+  // A category with nothing in it yet is itself "coming soon"
   if (!category.widgets.length && !category.upcomingWidgets.length) {
     return <ComingSoon category={category} name={category.name} summary={category.description} />
   }

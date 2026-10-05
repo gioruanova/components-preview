@@ -1,17 +1,17 @@
 # Components Live Preview (Saffire) — Testing POC
 
-Vite + React 19 + TS + Tailwind v4 + shadcn/ui tool to preview and configure Saffire website widgets. Each component page has three config sections (A Content, B Widget configuration, C Styles), a live iframe preview (Desktop/Tablet/Mobile + popup) and generated HTML / SCSS / CSS / Script / Data. There is also a Combiner (`/combiner`) for page layouts.
+Vite + React 19 + TS + Tailwind v4 + shadcn/ui tool to preview and configure Saffire website widgets. Each component page has three config sections (A Content, B Widget configuration, C Styles), a live iframe preview (Desktop/Tablet/Mobile + popup) and generated HTML / SCSS / CSS / Script / Data. There is also a Layout builder (`/layout-builder`, code in `src/combiner/`) for page layouts.
 
 `npm run dev` · `npm test` · `npm run typecheck` · `npm run build` · `npm run check:output` (output standards) · `npm run check:unused` (unused files/deps). Run test + typecheck after every change.
 
 ## Where things go
-- `src/widgets/<category>/category.ts`: a family (sidebar, tabs, homepage). `upcoming: [...]` lists planned components ("coming soon").
+- `src/widgets/<category>/category.ts`: a category (sidebar, tabs, homepage). `upcoming: [...]` lists planned components ("coming soon").
 - `src/widgets/<category>/<component>/`: one component. `index.ts` holds the metadata, plus `schema.ts`, `Preview.tsx`, `styles.ts`, `codegen.ts` and `codegen.test.ts`. **Adding a folder = adding a page.** No registry, routing or nav edits.
 - `src/tooling/`: generic machinery shared by all widgets (fields, preview, outputs, style model). Change it generically, never for one widget.
 - `src/tooling/outputProfile.ts`: **naming conventions of the generated code** (tabs, CSS var naming, container classes, breakpoints, headers).
-- `src/combiner/`: Combiner (pure model in `model.ts`, covered by `model.test.ts`).
+- `src/combiner/`: Layout builder (pure model in `model.ts`, covered by `model.test.ts`).
 - `docs/specs/<category>--<component>.md`: the source of truth for each component. The template is `docs/component-spec.template.md`.
-- `docs/reference.md`: full reference (field types, style model, container, buttons, Combiner, brand, ordering). **Read it when building or changing a component.**
+- `docs/reference.md`: full reference (field types, style model, container, buttons, Layout builder, brand, ordering). **Read it when building or changing a component.**
 - `docs/output-integration.md`: how to adopt the real source-code structure and nomenclature when it arrives.
 - `output-standards/`: the Prettier + Stylelint configs the generated code must follow (see its README).
 - `docs/brief/`: the original brief, brand references and logos.
@@ -33,7 +33,7 @@ Vite + React 19 + TS + Tailwind v4 + shadcn/ui tool to preview and configure Saf
 ## Skills
 - `/new-component <spec>`: build a component from a filled spec.
 - `/update-component <category>/<component> <change>`: change an existing one.
-- `/new-category <name>`: add a family, or planned "coming soon" items.
+- `/new-category <name>`: add a category, or planned "coming soon" items.
 - `/adopt-source-structure <path>`: map the real source structure and nomenclature onto the outputs.
 - `/update-output-standards <config>`: change the Prettier/Stylelint rules for the output and make every component comply.
 

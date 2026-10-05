@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { outputPath, previewUrl } from './assets'
 import { profile } from './outputProfile'
 import { responsive, withOverrides } from './responsive'
-import type { Sheet } from './stylesheet'
+import type { Rule, Sheet } from './stylesheet'
 import type { FieldDef, GroupField } from './types'
 
 /**
@@ -82,10 +82,10 @@ export const containerFields: FieldDef<ContainerConfig>[] = [
   },
 ]
 
-/** The container options without the on/off switch (reused by Combiner sections). */
+/** The container options without the on/off switch (reused by Layout builder sections). */
 export const containerOptionFields = (containerFields[1] as GroupField<ContainerConfig>).fields
 
-/** `selector` lets other features (e.g. Combiner sections) reuse the container styles under their own scope. */
+/** `selector` lets other features (e.g. Layout builder sections) reuse the container styles under their own scope. */
 export function containerSheet(c: ContainerConfig, mode: 'preview' | 'output', selector = `.${CLS.container}`, title = 'Container'): Sheet | null {
   if (!c.useContainer) return null
   const image = mode === 'preview' ? previewUrl(c.containerBgImage) : outputPath(c.containerBgImage)
@@ -122,6 +122,23 @@ export function containerSheet(c: ContainerConfig, mode: 'preview' | 'output', s
       { media: 'mobile', rules: [{ sel: selector, decls: { padding: pad.mobile === undefined ? undefined : '$$container-padding-mobile' } }] },
     ],
   }
+}
+
+/**
+ * Outer spacing of every widget, on its wrapper (the sheet `scope`, e.g. `.customCards-container`). One value for all
+ * widgets, and only when nothing around it already provides spacing: inside the global container or a Layout builder
+ * section the container padding (and column gap) is the spacing, so the wrapper gets none — no doubled space.
+ */
+export const WIDGET_SPACING = '20px 15px'
+
+export function withWrapperSpacing(sheet: Sheet, inContainer: boolean): Sheet {
+  const padding = inContainer ? undefined : WIDGET_SPACING
+  const index = sheet.rules.findIndex((r) => 'sel' in r && r.sel === sheet.scope)
+  if (index === -1) return padding ? { ...sheet, rules: [{ sel: sheet.scope, decls: { padding } }, ...sheet.rules] } : sheet
+  const rules = [...sheet.rules]
+  const rule = rules[index] as Rule
+  rules[index] = { ...rule, decls: { ...rule.decls, padding } }
+  return { ...sheet, rules }
 }
 
 export function wrapHtml(c: ContainerConfig, html: string): string {

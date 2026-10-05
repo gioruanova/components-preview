@@ -21,7 +21,7 @@ function Brand() {
   )
 }
 
-/** Quick switch between categories (families). */
+/** Quick switch between categories. */
 function CategoryTabs() {
   const { pathname } = useLocation()
   return (

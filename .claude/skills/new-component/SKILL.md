@@ -1,6 +1,6 @@
 ---
 name: new-component
-description: Build a new Components Live Preview page for a Saffire widget from a filled spec (docs/specs/*.md, based on docs/component-spec.template.md) — schema, preview markup, styles (preview + SCSS/CSS), live codegen and tests under src/widgets/<category>/<component>/. Use when the user adds a new component, a new variant to an existing family, turns a "coming soon" item into a real component, or hands over widget HTML/script/data/CSS to preview.
+description: Build a new Components Live Preview page for a Saffire widget from a filled spec (docs/specs/*.md, based on docs/component-spec.template.md) — schema, preview markup, styles (preview + SCSS/CSS), live codegen and tests under src/widgets/<category>/<component>/. Use when the user adds a new component, a new variant to an existing category, turns a "coming soon" item into a real component, or hands over widget HTML/script/data/CSS to preview.
 argument-hint: "<path to spec, e.g. docs/specs/cards--hot-buttons.md>"
 ---
 
@@ -16,7 +16,7 @@ Read `CLAUDE.md` (golden rules) and the field and style sections of `docs/refere
 - To turn a "coming soon" item into a real component, use the **same slug** as the `upcoming` entry, then delete that entry from `category.ts`.
 
 ## 1. Category
-Use the existing family, or run the `/new-category` steps first.
+Use the existing category, or run the `/new-category` steps first.
 
 ## 2. Scaffold `src/widgets/<category>/<slug>/`
 Copy `templates/*.tmpl` (next to this skill), drop `.tmpl`, and replace the placeholders listed in `templates/README.md`.

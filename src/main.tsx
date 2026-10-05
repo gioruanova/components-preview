@@ -1,6 +1,6 @@
 import { lazy, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { Toaster } from 'sonner'
 import '@fontsource/outfit/400.css'
 import '@fontsource/outfit/500.css'
@@ -22,7 +22,7 @@ window.addEventListener('vite:preloadError', (event) => {
 })
 window.addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('chunk-reload'), 10_000))
 
-// Heavy, rarely-first routes are code-split (dnd-kit etc. only load when the Combiner opens)
+// Heavy, rarely-first routes are code-split (dnd-kit etc. only load when the Layout builder opens)
 const CombinerPage = lazy(() => import('./combiner/CombinerPage').then((m) => ({ default: m.CombinerPage })))
 
 createRoot(document.getElementById('root')!).render(
@@ -32,7 +32,9 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
-            <Route path="combiner" element={<CombinerPage />} />
+            <Route path="layout-builder" element={<CombinerPage />} />
+            {/* old URL */}
+            <Route path="combiner" element={<Navigate to="/layout-builder" replace />} />
             <Route path=":category" element={<CategoryPage />} />
             <Route path=":category/:component" element={<WidgetPage />} />
             <Route path="*" element={<NotFound />} />

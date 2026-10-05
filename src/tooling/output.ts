@@ -1,4 +1,4 @@
-import { containerDefaults, containerFields, containerSheet, wrapHtml, type ContainerConfig } from './container'
+import { containerDefaults, containerFields, containerSheet, withWrapperSpacing, wrapHtml, type ContainerConfig } from './container'
 import { json } from './codegen'
 import { toCss, toScss, type Sheet } from './stylesheet'
 import { profile, type CodeTabId } from './outputProfile'
@@ -19,14 +19,15 @@ export function withContainer(def: WidgetDefinition<Config>): WidgetDefinition<C
   }
 }
 
-function sheets(def: WidgetDefinition<Config>, config: Config, mode: 'preview' | 'output'): Sheet[] {
+/** `inContainer`: rendered inside a container that already provides spacing (e.g. a Layout builder section). */
+function sheets(def: WidgetDefinition<Config>, config: Config, mode: 'preview' | 'output', inContainer = false): Sheet[] {
   const container = def.container === false ? null : containerSheet(config as ContainerConfig, mode)
-  return [...(container ? [container] : []), def.styles(config)]
+  return [...(container ? [container] : []), withWrapperSpacing(def.styles(config), inContainer || container !== null)]
 }
 
 /** CSS injected into the preview iframe — same generator as the CSS output, with real image URLs. */
-export function previewCss(def: WidgetDefinition<Config>, config: Config): string {
-  return toCss(sheets(def, config, 'preview'))
+export function previewCss(def: WidgetDefinition<Config>, config: Config, opts: { inContainer?: boolean } = {}): string {
+  return toCss(sheets(def, config, 'preview', opts.inContainer))
 }
 
 const COMMENT: Record<CodeTabId, (t: string) => string> = {

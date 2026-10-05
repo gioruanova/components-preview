@@ -12,7 +12,7 @@ export function SidebarTree({ onNavigate, collapsed = false }: { onNavigate?: ()
   const { pathname } = useLocation()
   const inCategory = (path: string) => pathname === path || pathname.startsWith(`${path}/`)
   const active = categories.find((c) => inCategory(c.path))?.slug
-  // Only the active family starts expanded; navigating to another family expands it too.
+  // Only the active category starts expanded; navigating to another category expands it too.
   const [open, setOpen] = useState<Set<string>>(() => new Set(active ? [active] : []))
   useEffect(() => {
     if (active) setOpen((s) => (s.has(active) ? s : new Set(s).add(active)))
@@ -34,7 +34,7 @@ export function SidebarTree({ onNavigate, collapsed = false }: { onNavigate?: ()
           />
         ))}
         <span className="my-2 h-px w-8 bg-border" />
-        <RailLink to="/combiner" label="Combiner" detail="Testing POC" active={pathname === '/combiner'} icon={LayoutPanelTop} />
+        <RailLink to="/layout-builder" label="Layout builder" detail="Testing POC" active={pathname === '/layout-builder'} icon={LayoutPanelTop} />
       </nav>
     )
   }
@@ -128,14 +128,14 @@ export function SidebarTree({ onNavigate, collapsed = false }: { onNavigate?: ()
 
       <p className="px-3 pt-4 pb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Tools</p>
       <NavLink
-        to="/combiner"
+        to="/layout-builder"
         onClick={onNavigate}
         className={({ isActive }) =>
           cn('flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:bg-muted', isActive && 'bg-brand-sky/60 text-brand-navy')
         }
       >
         <LayoutPanelTop className="size-4 text-brand-blue" />
-        <span className="flex-1">Combiner</span>
+        <span className="flex-1">Layout builder</span>
         <span className="rounded-full bg-brand-orange/15 px-1.5 text-[10px] font-bold text-[#b4470e] uppercase">POC</span>
       </NavLink>
     </nav>
@@ -160,7 +160,7 @@ export function CheckLayoutsLink({ collapsed = false }: { collapsed?: boolean })
       <img src={flameIcon} alt="" className="size-5 shrink-0" />
       {!collapsed && (
         <>
-          <span className="flex-1">Check Layouts</span>
+          <span className="flex-1">Saffire Layouts</span>
           <ExternalLink className="size-3.5 text-muted-foreground" />
           <span className="sr-only">(opens saffire.com in a new tab)</span>
         </>

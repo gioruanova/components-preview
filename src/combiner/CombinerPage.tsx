@@ -28,7 +28,7 @@ function CombinerPageBody() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight text-brand-navy">Combiner</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-brand-navy">Layout builder</h1>
             <TestingPocBadge />
           </div>
           <p className="mt-1 max-w-2xl text-muted-foreground">

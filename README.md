@@ -9,11 +9,11 @@ npm test           # codegen + rendering-rule tests
 npm run build
 ```
 
-## Combiner (Testing POC)
-At `/combiner` you can stack sections (1–3 columns, any container settings), drop any component into them, drag and drop to rearrange, and preview the result on Desktop, Tablet, Mobile or in a resizable popup. The layout is saved in your browser.
+## Layout builder (Testing POC)
+At `/layout-builder` you can stack sections (1–3 columns, any container settings), drop any component into them, drag and drop to rearrange, and preview the result on Desktop, Tablet, Mobile or in a resizable popup. The layout is saved in your browser.
 
 ## Adding components
-Components are grouped into **categories** (families). Both are just folders:
+Components are grouped into **categories**. Both are just folders:
 
 ```
 src/widgets/<category>/category.ts            → new category (sidebar group + tab)
@@ -31,6 +31,6 @@ All naming of the generated code (tabs, CSS variable naming, container classes, 
 
 ## Docs
 - [CLAUDE.md](CLAUDE.md): short context and golden rules (loaded by Claude Code every session).
-- [docs/reference.md](docs/reference.md): source map, field types, style model, container, buttons, Combiner, brand.
+- [docs/reference.md](docs/reference.md): source map, field types, style model, container, buttons, Layout builder, brand.
 - [docs/specs/](docs/specs): one spec per component (the source of truth).
 - [docs/brief/](docs/brief): the original brief and brand assets.

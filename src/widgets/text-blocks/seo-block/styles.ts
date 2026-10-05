@@ -85,7 +85,7 @@ export function styles(c: SeoBlockConfig): Sheet {
       ...b2.vars,
     ],
     rules: [
-      { sel: `.${c.widgetId}-signup-container`, decls: { 'box-sizing': 'border-box', display: 'flex', padding: '20px 15px' } },
+      { sel: `.${c.widgetId}-signup-container`, decls: { 'box-sizing': 'border-box', display: 'flex' } }, // padding: shared widget spacing (tooling)
       {
         sel: `#${c.widgetId}`,
         decls: {

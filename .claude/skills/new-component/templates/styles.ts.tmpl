@@ -38,6 +38,7 @@ export function styles(c: __Name__Config): Sheet {
   const desktop = at('desktop')
 
   return {
+    // Outer wrapper: never set padding on it — the tooling adds the shared widget spacing (WIDGET_SPACING) when no container provides it
     scope: `.${c.widgetId}-container`,
     title: '__Display Name__',
     vars: [

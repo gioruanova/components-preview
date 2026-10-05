@@ -3,7 +3,7 @@ import type { CategoryDefinition, Config, WidgetDefinition } from './types'
 
 /**
  * Folder-driven registry. Nothing to edit here when adding widgets:
- *   src/widgets/<category>/category.ts          → a category (component family)
+ *   src/widgets/<category>/category.ts          → a category
  *   src/widgets/<category>/<component>/index.ts → a component inside it
  * Folder names are the URL slugs. `shared/` folders are ignored.
  * Planned components come from `upcoming` in category.ts and get a "coming soon" page.

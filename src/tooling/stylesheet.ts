@@ -17,7 +17,12 @@ import { FONT_NOTE } from './typography'
 export type Decls = Record<string, string | number | false | null | undefined>
 export type Rule = { sel: string; decls?: Decls; nest?: Rule[] }
 export type Breakpoint = 'tablet' | 'mobile'
-export type MediaBlock = { media: Breakpoint; rules: Rule[] }
+/**
+ * `@container <name> (min-width: <minWidth>px)`: rules that depend on the width of an ancestor with `container-name: <name>`
+ * (e.g. how many cards fit in a row). Allowed at sheet level and inside a media block; selectors should reuse the base ones.
+ */
+export type ContainerBlock = { container: string; minWidth: number; rules: Rule[] }
+export type MediaBlock = { media: Breakpoint; rules: (Rule | ContainerBlock)[] }
 export type VarGroup = 'Colors' | 'Typography' | 'Layout'
 export type SheetVar = { name: string; value: string | number; group: VarGroup }
 
@@ -27,14 +32,16 @@ export type Sheet = {
   /** Optional heading comment. */
   title?: string
   vars: SheetVar[]
-  rules: (Rule | MediaBlock)[]
+  rules: (Rule | MediaBlock | ContainerBlock)[]
 }
 
 // Naming + breakpoints come from the output profile (single place to adopt a new nomenclature)
 const BREAKPOINTS: Record<Breakpoint, number> = profile.breakpoints
 
 const VAR_REF = /\$\$([a-z0-9-]+)/gi
-const isMedia = (r: Rule | MediaBlock): r is MediaBlock => 'media' in r
+const isMedia = (r: Rule | MediaBlock | ContainerBlock): r is MediaBlock => 'media' in r
+const isContainer = (r: Rule | MediaBlock | ContainerBlock): r is ContainerBlock => 'container' in r
+const containerQuery = (b: ContainerBlock) => `@container ${b.container} (min-width: ${b.minWidth}px)`
 const name = (n: string) => profile.varName(n)
 
 // ---------- value normalisation (stylelint-config-standard) ----------
@@ -129,13 +136,19 @@ const block = (sel: string, body: string[], indent: string) => `${indent}${selec
 
 // ---------- CSS ----------
 
-function cssRules(rules: Rule[], indent = ''): string[] {
-  return flatten(rules)
-    .map(({ sel, decls }) => {
-      const body = declLines(decls, toCssValue, `${indent}  `)
-      return body.length ? block(sel, body, indent) : ''
-    })
-    .filter(Boolean)
+function cssRules(rules: (Rule | ContainerBlock)[], indent = ''): string[] {
+  return rules.flatMap((r) => {
+    if (isContainer(r)) {
+      const inner = cssRules(r.rules, `${indent}  `)
+      return inner.length ? [`${indent}${containerQuery(r)} {\n${inner.join('\n\n')}\n${indent}}`] : []
+    }
+    return flatten([r])
+      .map(({ sel, decls }) => {
+        const body = declLines(decls, toCssValue, `${indent}  `)
+        return body.length ? block(sel, body, indent) : ''
+      })
+      .filter(Boolean)
+  })
 }
 
 export function toCss(sheets: Sheet[]): string {
@@ -163,7 +176,11 @@ export function toCss(sheets: Sheet[]): string {
 
 // ---------- SCSS ----------
 
-function scssRule(rule: Rule, indent: string): string {
+function scssRule(rule: Rule | ContainerBlock, indent: string): string {
+  if (isContainer(rule)) {
+    const inner = rule.rules.map((x) => scssRule(x, `${indent}  `)).filter(Boolean)
+    return inner.length ? `${indent}${containerQuery(rule)} {\n${inner.join('\n\n')}\n${indent}}` : ''
+  }
   const decls = declLines(rule.decls, toScssValue, `${indent}  `)
   const nested = (rule.nest ?? []).map((n) => scssRule(n, `${indent}  `)).filter(Boolean)
   if (!decls.length && !nested.length) return ''

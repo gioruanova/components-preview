@@ -2,9 +2,10 @@ import { containerDefaults, type ContainerConfig } from '@/tooling/container'
 import { categories } from '@/tooling/registry'
 import type { RegisteredWidget } from '@/tooling/registry'
 import type { Config } from '@/tooling/types'
+import type { SectionHeading } from './sectionHeading'
 
 /**
- * Combiner layout: sections (each a container with 1–3 columns) holding component instances.
+ * Layout builder (code name "combiner") layout: sections (each a container with 1–3 columns) holding component instances.
  * Everything here is pure and serialisable (it's saved to localStorage).
  */
 
@@ -23,7 +24,8 @@ export type SectionSettings = Omit<ContainerConfig, 'useContainer'> & {
 
 export type Item = { id: string; widget: string; config: Config }
 export type Column = { id: string; items: Item[] }
-export type Section = { id: string; settings: SectionSettings; columns: Column[] }
+/** `heading` (optional) is merged with defaults on read (`headingOf`); it renders above the columns wrapper. */
+export type Section = { id: string; settings: SectionSettings; heading?: Partial<SectionHeading>; columns: Column[] }
 export type Layout = { version: 1; sections: Section[] }
 
 export const MAX_COLUMNS = 3
@@ -85,6 +87,25 @@ export function columnFractions(s: SectionSettings): number[] {
   return (s.columns === 2 ? s.ratio2 : s.ratio3).split(':').map(Number)
 }
 
+/** An item renders something (its widget exists and isn't "removed" via `isEmpty`). */
+export function isItemRendered(item: Item): boolean {
+  const widget = findWidgetByKey(item.widget)
+  return !!widget && !widget.isEmpty?.(item.config)
+}
+
+/**
+ * Columns that are actually rendered, with their `fr` share.
+ * An empty column (no rendered items) is dropped, so the other columns take its space
+ * (2 columns with one empty → the other is 100%; 2:1:1 with the last empty → 2:1).
+ * When every column is empty, all of them are kept so the structure stays visible.
+ */
+export function renderedColumns(section: Section): { column: Column; index: number; fraction: number }[] {
+  const fractions = columnFractions(section.settings)
+  const all = section.columns.map((column, index) => ({ column, index, fraction: fractions[index] ?? 1 }))
+  const filled = all.filter((c) => c.column.items.some(isItemRendered))
+  return filled.length ? filled : all
+}
+
 // ---------- immutable operations ----------
 
 const mapSection = (layout: Layout, id: string, fn: (s: Section) => Section): Layout => ({
@@ -108,6 +129,7 @@ export function duplicateSection(layout: Layout, id: string): Layout {
   const copy: Section = {
     id: uid(),
     settings: { ...source.settings, name: `${source.settings.name} (copy)` },
+    heading: source.heading && structuredClone(source.heading),
     columns: source.columns.map((col) => ({
       id: uid(),
       items: col.items.map((item) => {
@@ -196,6 +218,11 @@ export function updateItemConfig(layout: Layout, itemId: string, key: string, va
   }))
 }
 
+/** Updates one setting of a section's heading (responsive keys like `headingFont@tablet` included; undefined resets). */
+export function updateSectionHeading(layout: Layout, sectionId: string, key: string, value: unknown): Layout {
+  return mapSection(layout, sectionId, (s) => ({ ...s, heading: { ...s.heading, [key]: value } }))
+}
+
 export function findItem(layout: Layout, itemId: string) {
   for (const section of layout.sections) {
     for (const column of section.columns) {
@@ -234,11 +261,15 @@ export function exampleLayout(): Layout {
   const seo = findWidgetByKey('text-blocks/seo-block')
   const cards = findWidgetByKey('cards/cards-grid')
 
-  layout = addSection(layout, { name: 'Hero', containerWidth: 'full', containerBgImage: 'sample:waves', containerPadding: 56 })
+  layout = addSection(layout, { name: 'Main Seo Block', containerWidth: 'full', containerBgImage: 'sample:waves', containerPadding: 56 })
   if (seo) layout = addItem(layout, layout.sections[0].columns[0].id, seo).layout
 
   layout = addSection(layout, { name: 'Highlights', columns: 2, ratio2: '1:2', align: 'center' })
   const [left, right] = layout.sections[1].columns
+  layout = mapSection(layout, layout.sections[1].id, (s) => ({
+    ...s,
+    heading: { showHeading: true, heading: 'Highlights this summer', showDescription: true, description: 'Plan your visit and discover what is on.' },
+  }))
   if (seo) {
     const r = addItem(layout, left.id, seo)
     layout = updateItemConfig(r.layout, r.item.id, 'titleLine1', 'Plan your visit')
@@ -248,7 +279,8 @@ export function exampleLayout(): Layout {
     const r = addItem(layout, right.id, cards)
     layout = updateItemConfig(r.layout, r.item.id, 'cardCount', 2)
     layout = updateItemConfig(layout, r.item.id, 'cardsPerRow', 2)
-    layout = updateItemConfig(layout, r.item.id, 'fitSpace', true)
+    layout = updateItemConfig(layout, r.item.id, 'cardSizing', 'stretch')
+    layout = updateItemConfig(layout, r.item.id, 'limitWidth', false)
   }
   return layout
 }
@@ -260,15 +292,19 @@ export function loadLayout(): Layout {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return exampleLayout()
-    const saved = JSON.parse(raw) as Layout
+    const saved = JSON.parse(raw) as Layout & { header?: Record<string, unknown> }
     if (saved?.version !== 1 || !Array.isArray(saved.sections)) return exampleLayout()
+    // legacy: a layout-level heading (before headings moved into sections) becomes the first section's heading
+    const legacy = saved.header && typeof saved.header === 'object' ? migrateLegacyHeader(saved.header) : undefined
     return {
       version: 1,
-      sections: saved.sections.map((s) => {
+      sections: saved.sections.map((s, i) => {
         const settings = { ...sectionDefaults(s.settings?.name ?? 'Section'), ...s.settings }
+        const heading = s.heading && typeof s.heading === 'object' ? s.heading : i === 0 ? legacy : undefined
         return {
           id: s.id,
           settings,
+          ...(heading ? { heading } : {}),
           columns: resizeColumns(
             (s.columns ?? []).map((c) => ({
               id: c.id,
@@ -285,6 +321,14 @@ export function loadLayout(): Layout {
   } catch {
     return exampleLayout()
   }
+}
+
+const HEADING_KEYS = /^(showHeading|heading|headingLevel|showDescription|description|alignment|headingFont|descriptionFont|maxWidth|gap)(@tablet|@mobile)?$/
+
+/** Keeps only the settings a section heading understands (drops layout-only ones like background/padding). */
+function migrateLegacyHeader(header: Record<string, unknown>): Partial<SectionHeading> | undefined {
+  const kept = Object.fromEntries(Object.entries(header).filter(([k]) => HEADING_KEYS.test(k)))
+  return Object.keys(kept).length ? (kept as Partial<SectionHeading>) : undefined
 }
 
 /** Returns false when the browser refused to save (quota / private mode). */

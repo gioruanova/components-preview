@@ -1,12 +1,17 @@
 import { customButtonStyles } from '@/tooling/buttons'
 import { widthDecls, widthVars } from '@/tooling/layout'
+import { profile } from '@/tooling/outputProfile'
 import { responsive, type Viewport } from '@/tooling/responsive'
-import type { Rule, Sheet, SheetVar } from '@/tooling/stylesheet'
+import type { ContainerBlock, Rule, Sheet, SheetVar } from '@/tooling/stylesheet'
 import { responsiveType } from '@/tooling/typography'
 import type { CardsConfig } from './schema'
 
 const V = { top: 'flex-start', center: 'center', bottom: 'flex-end' } as const
 const H = { left: 'flex-start', center: 'center', right: 'flex-end' } as const
+
+const GAP = 20
+/** Container name of the grid: "Keep card size" picks the cards per row from its width. */
+const GRID = 'cards-grid'
 
 /** flex-basis for N cards per row with the shared gap. */
 const basis = (n: number) => (n <= 1 ? '100%' : `calc((100% - ${n - 1} * $$cards-gap) / ${n})`)
@@ -24,6 +29,44 @@ export function styles(c: CardsConfig): Sheet {
   const horR = responsive(c, 'contentHorizontal')
   const minR = responsive(c, 'cardMinWidth')
   const arR = responsive(c, 'aspectRatio')
+  const sizingR = responsive(c, 'cardSizing')
+  const limitR = responsive(c, 'limitWidth')
+  // the variable in effect at a viewport (overrides only exist where the value changes)
+  const varAt = (r: { tablet?: unknown; mobile?: unknown }, name: string, vp: Viewport) =>
+    vp === 'mobile' && r.mobile !== undefined ? `$$${name}-mobile` : vp !== 'desktop' && r.tablet !== undefined ? `$$${name}-tablet` : `$$${name}`
+  const widthVarAt = (vp: Viewport) => varAt(widthR, 'card-width', vp)
+  // Card sizing (both are a centered, wrapping flex row):
+  // - 'stretch': cards grow into their row's leftover space (flex: 1 1), so a short last row gets wider cards.
+  // - 'fixed': every card has the same width (flex: 0 1) and full rows fill the grid. The cards per row come from the
+  //   grid width (container queries): k cards fit when width >= k * min + (k - 1) * gap, at most N. A short last row
+  //   keeps the same card width and is centered.
+  const fixed = (vp: Viewport) => sizingR.at[vp] === 'fixed'
+  /** Cards per row for a grid width (fixed mode). */
+  const fit = (vp: Viewport, width: number) => {
+    const n = perRow(vp)
+    const m = minR.at[vp]
+    if (!m) return n
+    return Math.max(1, Math.min(n, Math.floor((width + GAP) / (m + GAP))))
+  }
+  /** Grid widths at which one more card fits (fixed mode with a min width). */
+  const steps = (vp: Viewport) => {
+    const m = minR.at[vp]
+    if (!fixed(vp) || !m) return []
+    return Array.from({ length: perRow(vp) - 1 }, (_, i) => (i + 2) * m + (i + 1) * GAP)
+  }
+  // flex below the first step (stretch: always)
+  const flex = (vp: Viewport) => (fixed(vp) ? `0 1 ${basis(fit(vp, 0))}` : `1 1 ${basis(perRow(vp))}`)
+  const flexAt = (vp: Viewport, width: number) => (fixed(vp) ? `0 1 ${basis(fit(vp, width))}` : `1 1 ${basis(perRow(vp))}`)
+  const cardRule = (decls: Rule['decls']): Rule => ({ sel: `#${c.widgetId}`, nest: [{ sel: '.card-widget-item', decls }] })
+  const sizingKey = (vp: Viewport) => JSON.stringify([sizingR.at[vp], perRow(vp), minR.at[vp]])
+  /**
+   * Container queries of a viewport. In a media block the card's base `flex` comes later than every inherited query, so it
+   * resets them; only this viewport's own steps follow (the grid is never wider than the viewport).
+   */
+  const queries = (vp: Viewport): ContainerBlock[] =>
+    steps(vp)
+      .filter((w) => vp === 'desktop' || w <= profile.breakpoints[vp])
+      .map((w) => ({ container: GRID, minWidth: w, rules: [cardRule({ flex: flexAt(vp, w) })] }))
   // Fluid text scales with the CARD width (container query units), so long titles shrink instead of being cut
   const fluid = { unit: 'cqi', ref: widthR.desktop } as const
   const title = responsiveType('card-title', responsive(c, 'titleFont'), fluid)
@@ -45,7 +88,6 @@ export function styles(c: CardsConfig): Sheet {
   /** Overrides for tablet / mobile: only declarations whose value changes at that viewport. */
   const at = (vp: 'tablet' | 'mobile'): Rule => {
     const prev: Viewport = vp === 'tablet' ? 'desktop' : 'tablet'
-    const rowChanged = perRow(vp) !== perRow(prev)
     const h = horR[vp]
     const v = vertR[vp]
     const ar = arR[vp]
@@ -55,14 +97,20 @@ export function styles(c: CardsConfig): Sheet {
     if (square && ar !== undefined) height = ar === 'auto' ? `${heightR.at[vp]}px` : 'auto'
     else if (square && heightR[vp] !== undefined && arR.at[vp] === 'auto') height = `$$card-height-${vp}`
     const min = minR[vp]
+    const limit = limitR.at[vp]
+    let maxWidth: string | undefined
+    if (limit && (limitR[vp] !== undefined || widthR[vp] !== undefined)) maxWidth = widthVarAt(vp)
+    else if (!limit && limitR[vp] !== undefined) maxWidth = 'none'
+    const sizingChanged = sizingKey(vp) !== sizingKey(prev)
     return {
       sel: `#${c.widgetId}`,
       nest: [
         {
           sel: '.card-widget-item',
           decls: {
-            flex: rowChanged ? `${c.fitSpace ? '1 1' : '0 1'} ${basis(perRow(vp))}` : undefined,
-            'max-width': !c.fitSpace && widthR[vp] !== undefined ? `$$card-width-${vp}` : undefined,
+            // always re-set when the sizing changes: it also resets the inherited @container steps
+            flex: sizingChanged ? flex(vp) : undefined,
+            'max-width': maxWidth,
             height,
             'aspect-ratio': square && ar !== undefined ? ar : undefined,
             'min-width': min === undefined ? undefined : min ? `$$card-min-width-${vp}` : 0,
@@ -82,6 +130,7 @@ export function styles(c: CardsConfig): Sheet {
   }
 
   const h = horR.desktop
+  const queried = (['desktop', 'tablet', 'mobile'] as const).some((vp) => steps(vp).length > 0)
   return {
     scope: `.${c.widgetId}-container`,
     title: 'Cards',
@@ -96,13 +145,13 @@ export function styles(c: CardsConfig): Sheet {
       ...sizeVars,
       { name: 'card-radius', value: circle ? '50%' : `${c.borderRadius}px`, group: 'Layout' },
       { name: 'card-border-width', value: `${c.borderWidth}px`, group: 'Layout' },
-      { name: 'cards-gap', value: '20px', group: 'Layout' },
+      { name: 'cards-gap', value: `${GAP}px`, group: 'Layout' },
       ...widthVars(c, 'cards-max-width'),
       ...b1.vars,
       ...b2.vars,
     ],
     rules: [
-      { sel: `.${c.widgetId}-container`, decls: { 'box-sizing': 'border-box', width: '100%', padding: '30px 15px 15px' } },
+      { sel: `.${c.widgetId}-container`, decls: { 'box-sizing': 'border-box', width: '100%' } }, // padding: shared widget spacing (tooling)
       {
         sel: `#${c.widgetId}`,
         decls: {
@@ -111,6 +160,9 @@ export function styles(c: CardsConfig): Sheet {
           'flex-wrap': 'wrap',
           'justify-content': 'center',
           gap: '$$cards-gap',
+          // "Keep card size" picks the cards per row from this width (@container below)
+          'container-type': queried ? 'inline-size' : undefined,
+          'container-name': queried ? GRID : undefined,
           ...widthDecls(c, 'cards-max-width'),
           margin: '0 auto',
         },
@@ -122,9 +174,9 @@ export function styles(c: CardsConfig): Sheet {
               position: 'relative',
               display: 'flex',
               overflow: 'hidden',
-              flex: `${c.fitSpace ? '1 1' : '0 1'} ${basis(perRow('desktop'))}`,
+              flex: flex('desktop'),
               'min-width': minR.desktop ? '$$card-min-width' : undefined,
-              'max-width': c.fitSpace ? undefined : '$$card-width',
+              'max-width': limitR.desktop ? '$$card-width' : undefined,
               height: circle || arR.desktop !== 'auto' ? 'auto' : '$$card-height',
               'aspect-ratio': circle ? 1 : arR.desktop !== 'auto' ? arR.desktop : undefined,
               'container-type': 'inline-size', // enables cqi units for fluid text
@@ -255,8 +307,9 @@ export function styles(c: CardsConfig): Sheet {
           },
         ],
       },
-      { media: 'tablet', rules: [at('tablet')] },
-      { media: 'mobile', rules: [at('mobile')] },
+      ...queries('desktop'),
+      { media: 'tablet', rules: [at('tablet'), ...(sizingKey('tablet') !== sizingKey('desktop') ? queries('tablet') : [])] },
+      { media: 'mobile', rules: [at('mobile'), ...(sizingKey('mobile') !== sizingKey('tablet') ? queries('mobile') : [])] },
     ],
   }
 }
