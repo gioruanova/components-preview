@@ -22,7 +22,8 @@ export type Breakpoint = 'tablet' | 'mobile'
  * (e.g. how many cards fit in a row). Allowed at sheet level and inside a media block; selectors should reuse the base ones.
  */
 export type ContainerBlock = { container: string; minWidth: number; rules: Rule[] }
-export type MediaBlock = { media: Breakpoint; rules: (Rule | ContainerBlock)[] }
+/** `media`: a profile breakpoint, or a custom max-width in px (e.g. a header's own collapse point). */
+export type MediaBlock = { media: Breakpoint | number; rules: (Rule | ContainerBlock)[] }
 export type VarGroup = 'Colors' | 'Typography' | 'Layout'
 export type SheetVar = { name: string; value: string | number; group: VarGroup }
 
@@ -163,7 +164,8 @@ export function toCss(sheets: Sheet[]): string {
       for (const r of sheet.rules) {
         if (isMedia(r)) {
           const inner = cssRules(r.rules, '  ')
-          if (inner.length) out.push(`@media (max-width: ${BREAKPOINTS[r.media]}px) {\n${inner.join('\n\n')}\n}`)
+          const max = typeof r.media === 'number' ? r.media : BREAKPOINTS[r.media]
+          if (inner.length) out.push(`@media (max-width: ${max}px) {\n${inner.join('\n\n')}\n}`)
         } else {
           out.push(...cssRules([r]))
         }
@@ -208,7 +210,8 @@ export function toScss(sheets: Sheet[]): string {
     for (const r of sheet.rules) {
       if (isMedia(r)) {
         const inner = r.rules.map((x) => scssRule(x, '  ')).filter(Boolean)
-        if (inner.length) rules.push(`@media (max-width: $bp-${r.media}) {\n${inner.join('\n\n')}\n}`)
+        const max = typeof r.media === 'number' ? `${r.media}px` : `$bp-${r.media}`
+        if (inner.length) rules.push(`@media (max-width: ${max}) {\n${inner.join('\n\n')}\n}`)
       } else {
         const s = scssRule(r, '')
         if (s) rules.push(s)

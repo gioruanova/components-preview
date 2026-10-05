@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { Ban, Check, ImagePlus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { ACCEPT, SAMPLE_ICONS, SAMPLE_IMAGES, addUpload, removeUpload, uploadsOf, useUploads } from '../assets'
+import { ACCEPT, SAMPLE_ICONS, SAMPLE_IMAGES, SAMPLE_LOGOS, addUpload, removeUpload, uploadsOf, useUploads } from '../assets'
 import type { ImageLibrary } from '../types'
 
 type Tile = { ref: string; name: string; url?: string; removable?: boolean }
@@ -11,18 +11,23 @@ export function ImagePicker({ id, value, onChange, library = 'background' }: { i
   const uploads = uploadsOf(useUploads(), library)
   const input = useRef<HTMLInputElement>(null)
   const icons = library === 'icon'
+  const logos = library === 'logo'
+  const samples = icons
+    ? SAMPLE_ICONS.map((s) => ({ ref: `icon:${s.id}`, name: s.name, url: s.url }))
+    : logos
+      ? SAMPLE_LOGOS.map((s) => ({ ref: `logo:${s.id}`, name: s.name, url: s.url }))
+      : SAMPLE_IMAGES.map((s) => ({ ref: `sample:${s.id}`, name: s.name, url: s.url }))
 
   const tiles: Tile[] = [
     { ref: '', name: 'None' },
-    ...(icons
-      ? SAMPLE_ICONS.map((s) => ({ ref: `icon:${s.id}`, name: s.name, url: s.url }))
-      : SAMPLE_IMAGES.map((s) => ({ ref: `sample:${s.id}`, name: s.name, url: s.url }))),
+    ...samples,
     ...uploads.map((u) => ({ ref: `upload:${u.id}`, name: u.name, url: u.url, removable: true })),
   ]
 
   const onFile = async (file?: File) => {
     if (!file) return
     if (icons && file.type !== 'image/png') return toast.error('Icons must be PNG files')
+    if (logos && !['image/png', 'image/jpeg'].includes(file.type)) return toast.error('Logos must be PNG or JPG files')
     if (!file.type.startsWith('image/')) return toast.error('Please choose an image file')
     try {
       const { upload, persisted } = await addUpload(file, library)
@@ -36,7 +41,7 @@ export function ImagePicker({ id, value, onChange, library = 'background' }: { i
 
   return (
     <div id={id} className="space-y-2">
-      <div role="radiogroup" aria-label={icons ? 'Icon' : 'Background image'} className={cn('grid gap-2', icons ? 'grid-cols-5' : 'grid-cols-4')}>
+      <div role="radiogroup" aria-label={icons ? 'Icon' : logos ? 'Logo' : 'Background image'} className={cn('grid gap-2', icons ? 'grid-cols-5' : logos ? 'grid-cols-3' : 'grid-cols-4')}>
         {tiles.map((t) => {
           const active = value === t.ref
           return (
@@ -50,8 +55,9 @@ export function ImagePicker({ id, value, onChange, library = 'background' }: { i
                 className={cn(
                   'relative grid w-full place-items-center overflow-hidden rounded-md border bg-muted bg-center transition hover:ring-2 hover:ring-ring/40',
                   // icons are white-on-transparent: show them contained on the brand blue
-                  icons ? 'aspect-square bg-[length:60%] bg-no-repeat' : 'aspect-[4/3] bg-cover',
+                  icons ? 'aspect-square bg-[length:60%] bg-no-repeat' : logos ? 'aspect-[16/9] bg-[length:85%] bg-no-repeat' : 'aspect-[4/3] bg-cover',
                   icons && t.url && 'bg-[#0079c2]',
+                  logos && t.url && 'bg-white',
                   active && 'ring-2 ring-ring ring-offset-1',
                 )}
                 style={t.url ? { backgroundImage: `url("${t.url}")` } : undefined}
@@ -84,17 +90,17 @@ export function ImagePicker({ id, value, onChange, library = 'background' }: { i
           onClick={() => input.current?.click()}
           className={cn(
             'grid w-full place-items-center rounded-md border border-dashed border-primary/50 text-primary transition hover:bg-brand-sky/50',
-            icons ? 'aspect-square' : 'aspect-[4/3]',
+            icons ? 'aspect-square' : logos ? 'aspect-[16/9]' : 'aspect-[4/3]',
           )}
-          aria-label={icons ? 'Upload a PNG icon' : 'Upload an image'}
-          title={icons ? 'Upload a PNG icon' : 'Upload an image'}
+          aria-label={icons ? 'Upload a PNG icon' : logos ? 'Upload a PNG or JPG logo' : 'Upload an image'}
+          title={icons ? 'Upload a PNG icon' : logos ? 'Upload a PNG or JPG logo' : 'Upload an image'}
         >
           <ImagePlus className="size-4" />
         </button>
       </div>
       <input ref={input} type="file" accept={ACCEPT[library]} hidden onChange={(e) => (onFile(e.target.files?.[0]), (e.target.value = ''))} />
       <p className="text-xs text-muted-foreground">
-        {icons ? 'PNG only (transparency kept). ' : ''}Uploads are resized and kept in this browser only (no server).
+        {icons ? 'PNG only (transparency kept). ' : logos ? 'PNG or JPG (PNG keeps transparency). ' : ''}Uploads are resized and kept in this browser only (no server).
       </p>
     </div>
   )

@@ -29,7 +29,8 @@ export type Item = { id: string; widget: string; config: Config }
 export type Column = { id: string; items: Item[] }
 /** `heading` (optional) is merged with defaults on read (`headingOf`); it renders above the columns wrapper. */
 export type Section = { id: string; settings: SectionSettings; heading?: Partial<SectionHeading>; columns: Column[] }
-export type Layout = { version: 1; sections: Section[] }
+/** `siteHeader`: optional page header above all sections; only Header components can go there. */
+export type Layout = { version: 1; siteHeader?: Item; sections: Section[] }
 
 export const MAX_COLUMNS = 3
 
@@ -44,7 +45,26 @@ export function findWidgetByKey(key: string): RegisteredWidget | undefined {
   return categories.find((c) => c.slug === cat)?.widgets.find((w) => w.slug === slug)
 }
 
-const allItems = (layout: Layout) => layout.sections.flatMap((s) => s.columns.flatMap((c) => c.items))
+const allItems = (layout: Layout) => [...(layout.siteHeader ? [layout.siteHeader] : []), ...layout.sections.flatMap((s) => s.columns.flatMap((c) => c.items))]
+
+// ---------- site header (top slot) ----------
+
+/** Category whose components may sit in the header slot (and only there). */
+export const HEADER_CATEGORY = 'header'
+export const isHeaderWidget = (key: string) => key.split('/')[0] === HEADER_CATEGORY
+export const headerCategory = () => categories.find((c) => c.slug === HEADER_CATEGORY)
+
+/** Puts a header component in the top slot (replacing the current one). */
+export function setSiteHeader(layout: Layout, widget: RegisteredWidget): { layout: Layout; item: Item } {
+  if (!isHeaderWidget(widgetKey(widget))) throw new Error(`${widget.name} is not a header component`)
+  const item = newItem({ ...layout, siteHeader: undefined }, widget)
+  return { item, layout: { ...layout, siteHeader: item } }
+}
+
+export function removeSiteHeader(layout: Layout): Layout {
+  const { siteHeader: _removed, ...rest } = layout
+  return rest
+}
 
 /** Widget IDs must be unique on a page (CSS is scoped by them): customCards, customCards2, … */
 export function uniqueWidgetId(layout: Layout, base: string, reserved: Set<string> = new Set()): string {
@@ -216,6 +236,7 @@ export function duplicateItem(layout: Layout, itemId: string): Layout {
 }
 
 export function updateItemConfig(layout: Layout, itemId: string, key: string, value: unknown): Layout {
+  if (layout.siteHeader?.id === itemId) return { ...layout, siteHeader: { ...layout.siteHeader, config: { ...layout.siteHeader.config, [key]: value } } }
   return mapColumns(layout, (c) => ({
     ...c,
     items: c.items.map((i) => (i.id === itemId ? { ...i, config: { ...i.config, [key]: value } } : i)),
@@ -264,6 +285,8 @@ export function exampleLayout(): Layout {
   let layout: Layout = { version: 1, sections: [] }
   const seo = findWidgetByKey('text-blocks/seo-block')
   const cards = findWidgetByKey('cards/cards-grid')
+  const header = findWidgetByKey('header/right-aligned-menu-header')
+  if (header) layout = setSiteHeader(layout, header).layout
 
   layout = addSection(layout, { name: 'Main Seo Block', containerWidth: 'full', containerBgImage: 'sample:waves', containerPadding: 56 })
   if (seo) layout = addItem(layout, layout.sections[0].columns[0].id, seo).layout
@@ -300,8 +323,11 @@ export function loadLayout(): Layout {
     if (saved?.version !== 1 || !Array.isArray(saved.sections)) return exampleLayout()
     // legacy: a layout-level heading (before headings moved into sections) becomes the first section's heading
     const legacy = saved.header && typeof saved.header === 'object' ? migrateLegacyHeader(saved.header) : undefined
+    const header = saved.siteHeader
+    const headerWidget = header && isHeaderWidget(String(header.widget)) ? findWidgetByKey(header.widget) : undefined
     return {
       version: 1,
+      ...(header && headerWidget ? { siteHeader: { id: header.id, widget: header.widget, config: { ...structuredClone(headerWidget.defaults), ...header.config } } } : {}),
       sections: saved.sections.map((s, i) => {
         // legacy: one `gap` for both directions
         const { gap, ...savedSettings } = (s.settings ?? {}) as Partial<SectionSettings> & { gap?: number }

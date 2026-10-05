@@ -1,6 +1,6 @@
 import { itemRow } from '@/tooling/itemRow'
-import { widthDecls, widthVars } from '@/tooling/layout'
-import { responsive, type ResponsiveValue, type Viewport } from '@/tooling/responsive'
+import { sizeVar, widthDecls, widthVars } from '@/tooling/layout'
+import { responsive, type Viewport } from '@/tooling/responsive'
 import type { Decls, Rule, Sheet, SheetVar } from '@/tooling/stylesheet'
 import { responsiveType } from '@/tooling/typography'
 import type { HotButtonsConfig } from './schema'
@@ -8,17 +8,6 @@ import type { HotButtonsConfig } from './schema'
 const FLEX = { left: 'flex-start', center: 'center', right: 'flex-end' } as const
 /** Icon position → flex-direction of the button (the icon comes first in the markup). */
 const DIRECTION = { left: 'row', right: 'row-reverse', top: 'column', bottom: 'column-reverse' } as const
-
-/** A px size as a variable, plus `-tablet` / `-mobile` variables only where it changes. */
-function sizeVar(name: string, r: ResponsiveValue<number>) {
-  const vars: SheetVar[] = [
-    { name, value: `${r.desktop}px`, group: 'Layout' },
-    ...(['tablet', 'mobile'] as const).flatMap((vp) => (r[vp] === undefined ? [] : [{ name: `${name}-${vp}`, value: `${r[vp]}px`, group: 'Layout' as const }])),
-  ]
-  /** The variable in effect at a viewport. */
-  const at = (vp: Viewport) => (vp === 'mobile' && r.mobile !== undefined ? `$$${name}-mobile` : vp !== 'desktop' && r.tablet !== undefined ? `$$${name}-tablet` : `$$${name}`)
-  return { vars, at, changed: (vp: 'tablet' | 'mobile') => r[vp] !== undefined }
-}
 
 export function styles(c: HotButtonsConfig): Sheet {
   const root = `#${c.widgetId}`

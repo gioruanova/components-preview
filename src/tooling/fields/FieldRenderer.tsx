@@ -64,7 +64,7 @@ const VP_LABEL = { desktop: 'Desktop', tablet: 'Tablet', mobile: 'Mobile' } as c
 
 /** Leaf field; `responsive` fields read/write the value of the viewport being edited (tablet/mobile overrides). */
 function Leaf<C extends Config>({ field, config, onChange }: { field: LeafField<C>; config: C; onChange: Props<C>['onChange'] }) {
-  const { viewport, setViewport } = useViewport()
+  const { viewport, setViewport, viewports } = useViewport()
   const responsiveField = 'responsive' in field && field.responsive === true
   const vp = responsiveField ? viewport : 'desktop'
   const value = responsiveField ? valueAt(config, field.key, vp) : config[field.key]
@@ -75,7 +75,7 @@ function Leaf<C extends Config>({ field, config, onChange }: { field: LeafField<
   const overridden = hasOverride(config, field.key, vp)
   const anyOverride = hasOverride(config, field.key, 'tablet') || hasOverride(config, field.key, 'mobile')
   const status =
-    vp === 'desktop' ? (anyOverride ? 'Desktop value · has per-viewport overrides' : 'Same on every viewport') : overridden ? `${VP_LABEL[vp]} override` : `Inherits ${vp === 'mobile' ? 'Tablet' : 'Desktop'}`
+    vp === 'desktop' ? (anyOverride ? 'Desktop value · has per-viewport overrides' : 'Same on every viewport') : overridden ? `${VP_LABEL[vp]} override` : `Inherits ${vp === 'mobile' && viewports.includes('tablet') ? 'Tablet' : 'Desktop'}`
 
   return (
     <div className={cn('-mx-1.5 space-y-1.5 rounded-md px-1.5 py-1 transition-colors', overridden && 'bg-brand-orange/5 ring-1 ring-brand-orange/30')}>
@@ -90,7 +90,7 @@ function Leaf<C extends Config>({ field, config, onChange }: { field: LeafField<
           )}
         </span>
         <span className="flex shrink-0 items-center gap-0.5" role="group" aria-label={`${field.label}: viewport`}>
-          {VIEWPORT_ORDER.map((v) => {
+          {VIEWPORT_ORDER.filter((v) => viewports.includes(v)).map((v) => {
             const Icon = VP_ICONS[v]
             const has = hasOverride(config, field.key, v)
             return (
@@ -133,7 +133,7 @@ function LeafControl<C extends Config>({
     case 'text':
       return (
         <Row id={id} label={field.label} help={field.help} tip={field.tip}>
-          <Input id={id} value={String(value ?? '')} placeholder={field.placeholder} onChange={(e) => set(e.target.value)} />
+          <Input id={id} value={String(value ?? '')} placeholder={field.placeholder} maxLength={field.maxLength} onChange={(e) => set(e.target.value)} />
         </Row>
       )
     case 'textarea':

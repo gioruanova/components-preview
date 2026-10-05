@@ -16,7 +16,7 @@ import { ViewportProvider } from './viewport'
 /** Generic page for any widget. Mount with `key={widget.path}` so state resets per widget. */
 export function ComponentPage({ widget }: { widget: RegisteredWidget }) {
   return (
-    <ViewportProvider>
+    <ViewportProvider viewports={widget.viewports}>
       <ComponentPageBody widget={widget} />
     </ViewportProvider>
   )

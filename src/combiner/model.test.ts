@@ -8,6 +8,10 @@ import {
   exampleLayout,
   findItem,
   findWidgetByKey,
+  isHeaderWidget,
+  removeSiteHeader,
+  setSiteHeader,
+  updateItemConfig,
   moveItem,
   moveSection,
   loadLayout,
@@ -96,6 +100,19 @@ describe('combiner model', () => {
     vi.unstubAllGlobals()
     expect([loaded.columnGap, loaded.rowGap]).toEqual([32, 32])
     expect('gap' in loaded).toBe(false)
+  })
+
+  it('has a header slot that only accepts Header components', () => {
+    const header = findWidgetByKey('header/right-aligned-menu-header')!
+    let l = setSiteHeader(empty(), header).layout
+    expect(l.siteHeader?.widget).toBe('header/right-aligned-menu-header')
+    expect(isHeaderWidget('header/right-aligned-menu-header')).toBe(true)
+    expect(isHeaderWidget('cards/cards-grid')).toBe(false)
+    expect(() => setSiteHeader(empty(), cards)).toThrow()
+    l = updateItemConfig(l, l.siteHeader!.id, 'ticketLabel', 'Tickets')
+    expect(l.siteHeader?.config.ticketLabel).toBe('Tickets')
+    expect(removeSiteHeader(l).siteHeader).toBeUndefined()
+    expect(exampleLayout().siteHeader?.widget).toBe('header/right-aligned-menu-header')
   })
 
   it('drops empty columns so the others take the full width', () => {

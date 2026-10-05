@@ -6,16 +6,8 @@ export default defineCategory({
   description: 'Site headers: logo, navigation and calls to action.',
   icon: PanelTop,
   order: 0,
-  upcoming: [
-    {
-      name: 'Centered Menu Header',
-      summary: 'Logo left; the menu and the Buy Tickets button share one row through the middle of the header, search and cart above.',
-      starterLayouts: ['cherry'],
-    },
-    {
-      name: 'Right-aligned Menu Header',
-      summary: 'Logo left; search, cart and a prominent Buy Tickets button on top, the menu tucked to the right edge below.',
-      starterLayouts: ['mango', 'banana', 'peach', 'grape', 'lemon'],
-    },
-  ],
+  headsUp: {
+    quote: 'The sky’s the limit… the header, sadly, is not.',
+    note: 'Every option here can be switched on, and every label is client-managed — so it can grow. Keep the header lean: a logo, a countdown, five top items and a ticket button that fit today can wrap, collapse or push the menu out tomorrow. Try long labels and check every viewport before to ensure verything fits accordingly.',
+  },
 })

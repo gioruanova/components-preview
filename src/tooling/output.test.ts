@@ -18,7 +18,7 @@ describe('output', () => {
   })
 
   it('wraps HTML and CSS with the profile container class names', () => {
-    const w = widgets[0]
+    const w = widgets.find((x) => x.container !== false)!
     const config = { ...w.defaults, useContainer: true }
     const [html] = outputFiles(w, config)
     expect(html.code).toContain(`class="${profile.classNames.container}"`)
@@ -26,7 +26,8 @@ describe('output', () => {
   })
 
   it('gives every widget wrapper the same spacing, only when no container provides it', () => {
-    for (const w of widgets) {
+    // edge-to-edge widgets (e.g. headers) opt out with `wrapperSpacing: false`
+    for (const w of widgets.filter((x) => x.wrapperSpacing !== false)) {
       const scope = w.styles(w.defaults).scope
       // every top-level block of the wrapper selector (variables block + rule)
       const wrapper = (css: string) =>

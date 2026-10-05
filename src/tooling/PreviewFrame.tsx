@@ -109,9 +109,10 @@ function EmptyState() {
 }
 
 function ViewportToggle({ value, onChange }: { value: ViewportId | null; onChange: (v: ViewportId) => void }) {
+  const { viewports } = useViewport()
   return (
     <ToggleGroup type="single" variant="outline" size="sm" value={value ?? ''} onValueChange={(v) => v && onChange(v as ViewportId)}>
-      {VIEWPORTS.map(({ id, label, icon: Icon }) => (
+      {VIEWPORTS.filter((v) => viewports.includes(v.id)).map(({ id, label, icon: Icon }) => (
         <Tooltip key={id}>
           <TooltipTrigger asChild>
             <ToggleGroupItem value={id} aria-label={label} className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">

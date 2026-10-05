@@ -2,6 +2,7 @@ import { lazy } from 'react'
 import { ArrowRight, ChevronRight, Hourglass } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { findCategory, findUpcoming, findWidget, type RegisteredCategory } from '@/tooling/registry'
+import { HeadsUp } from '@/tooling/HeadsUp'
 import { StatusBadge } from '@/tooling/ui'
 import { ComingSoon } from './ComingSoon'
 
@@ -23,6 +24,7 @@ export function CategoryPage() {
         <h1 className="text-3xl font-bold tracking-tight text-brand-navy">{category.name}</h1>
         <p className="mt-1 max-w-2xl text-muted-foreground">{category.description}</p>
       </div>
+      <HeadsUp headsUp={category.headsUp} />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {category.widgets.map((w) => (
           <Link key={w.slug} to={w.path} className="group rounded-xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-blue/40 hover:shadow-md">
@@ -84,6 +86,7 @@ export function WidgetPage() {
   return (
     <div className="space-y-4">
       <Breadcrumb category={category} name={(widget ?? upcoming)!.name} />
+      <HeadsUp headsUp={category.headsUp} />
       {widget ? <ComponentPage key={widget.path} widget={widget} /> : <ComingSoon category={category} name={upcoming!.name} summary={upcoming!.summary} starterLayouts={upcoming!.starterLayouts} />}
     </div>
   )

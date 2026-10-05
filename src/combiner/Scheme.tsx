@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Copy, GripVertical, Heading, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Copy, GripVertical, Heading, PanelTop, Pencil, Plus, Replace, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -30,11 +30,15 @@ import {
   duplicateSection,
   findItem,
   findWidgetByKey,
+  headerCategory,
+  HEADER_CATEGORY,
   moveItem,
   moveSection,
   removeItem,
   removeSection,
+  removeSiteHeader,
   renderedColumns,
+  setSiteHeader,
   type Column,
   type Item,
   type Layout,
@@ -127,6 +131,21 @@ export function Scheme({ layout, update, updateWithUndo, selection, select }: Pr
 
   return (
     <DndContext sensors={sensors} collisionDetection={collision} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => setActive(null)}>
+      <HeaderSlot
+        layout={layout}
+        selected={selection?.type === 'siteHeader'}
+        onPick={(key) => {
+          const widget = findWidgetByKey(key)
+          if (!widget) return
+          update((l) => setSiteHeader(l, widget).layout)
+          select({ type: 'siteHeader' })
+        }}
+        onEdit={() => select({ type: 'siteHeader' })}
+        onRemove={() => {
+          if (selection?.type === 'siteHeader') select(null)
+          updateWithUndo(removeSiteHeader, 'Header removed')
+        }}
+      />
       <SortableContext items={layout.sections.map((s) => S(s.id))} strategy={verticalListSortingStrategy}>
         <ol className="space-y-3" aria-label="Sections">
           {layout.sections.map((section, i) => (
@@ -390,6 +409,93 @@ function ItemChipView({
   )
 }
 
+/** Top slot of the page: only Header components can be placed here (and they can't go in columns). */
+function HeaderSlot({ layout, selected, onPick, onEdit, onRemove }: { layout: Layout; selected: boolean; onPick: (key: string) => void; onEdit: () => void; onRemove: () => void }) {
+  const item = layout.siteHeader
+  const widget = item && findWidgetByKey(item.widget)
+  return (
+    <div
+      className={cn(
+        'mb-3 flex items-center gap-2 rounded-xl border p-2',
+        item ? 'border-[#8e44ad]/40 bg-[#8e44ad]/5' : 'border-dashed border-[#8e44ad]/50 bg-card',
+        selected && 'ring-2 ring-brand-blue',
+      )}
+    >
+      <span className="grid size-8 shrink-0 place-items-center rounded-md bg-[#8e44ad]/10 text-[#8e44ad]">
+        <PanelTop className="size-4" />
+      </span>
+      {item && widget ? (
+        <>
+          <button type="button" onClick={onEdit} className="min-w-0 flex-1 text-left">
+            <span className="block text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">Header</span>
+            <span className="block truncate text-sm font-semibold">{widget.name}</span>
+          </button>
+          <IconAction label="Edit header" onClick={onEdit}>
+            <Pencil />
+          </IconAction>
+          <HeaderPicker onPick={onPick} current={item.widget}>
+            <Button variant="ghost" size="icon" className="size-8" aria-label="Change header">
+              <Replace />
+            </Button>
+          </HeaderPicker>
+          <IconAction label="Remove header" onClick={onRemove} danger>
+            <Trash2 />
+          </IconAction>
+        </>
+      ) : (
+        <>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">Header</span>
+            <span className="block text-xs text-muted-foreground">Empty · only header components can go here</span>
+          </span>
+          <HeaderPicker onPick={onPick}>
+            <Button variant="outline" size="sm" className="border-dashed border-[#8e44ad]/50 text-[#8e44ad]">
+              <Plus /> Add header
+            </Button>
+          </HeaderPicker>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Lists the Header category only (planned ones shown as "soon"). */
+function HeaderPicker({ onPick, current, children }: { onPick: (key: string) => void; current?: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const category = headerCategory()
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverContent align="end" className="w-72 p-2">
+        <p className="px-2 pb-1 text-xs font-semibold text-muted-foreground uppercase">Choose a header</p>
+        {category?.widgets.map((w) => {
+          const key = `${w.categorySlug}/${w.slug}`
+          return (
+            <button
+              key={w.slug}
+              type="button"
+              onClick={() => {
+                onPick(key)
+                setOpen(false)
+              }}
+              className={cn('block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted', key === current && 'bg-brand-sky/60')}
+            >
+              {w.name}
+              <span className="block text-xs text-muted-foreground">{w.summary}</span>
+            </button>
+          )
+        })}
+        {category?.upcomingWidgets.map((w) => (
+          <div key={w.slug} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground" aria-disabled="true">
+            {w.name}
+            <span className="rounded-full bg-brand-orange/10 px-2 py-0.5 text-[10px] font-bold text-[#b4470e] uppercase">Soon</span>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 function AddComponent({ onAdd }: { onAdd: (widgetKey: string) => void }) {
   const [open, setOpen] = useState(false)
   return (
@@ -404,7 +510,8 @@ function AddComponent({ onAdd }: { onAdd: (widgetKey: string) => void }) {
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-2">
         <p className="px-2 pb-1 text-xs font-semibold text-muted-foreground uppercase">Add component</p>
-        {categories.map((c) => {
+        {/* header components only go in the header slot */}
+        {categories.filter((c) => c.slug !== HEADER_CATEGORY && c.widgets.length > 0).map((c) => {
           const Icon = c.icon
           return (
             <div key={c.slug} className="py-1">

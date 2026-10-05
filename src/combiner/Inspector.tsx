@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { ConfigPanel } from '@/tooling/ConfigPanel'
 import { FieldRenderer } from '@/tooling/fields/FieldRenderer'
 import type { Config } from '@/tooling/types'
+import { ViewportProvider } from '@/tooling/viewport'
 import { findItem, findWidgetByKey, updateItemConfig, updateSectionHeading, updateSectionSettings, type Layout, type SectionSettings } from './model'
 import { headingOf, headingSchema } from './sectionHeading'
 import { sectionFields } from './sections'
@@ -50,6 +51,23 @@ export function Inspector({ layout, selection, onClose, update }: Props) {
             <FieldRenderer key={'key' in f ? f.key : `${f.label}-${i}`} field={f} config={section.settings} onChange={onChange} />
           ))}
         </div>
+      </Panel>
+    )
+  }
+
+  if (selection.type === 'siteHeader') {
+    const item = layout.siteHeader
+    const widget = item && findWidgetByKey(item.widget)
+    if (!item || !widget) return null
+    const onChange = (key: string, value: unknown) => update((l) => updateItemConfig(l, item.id, key, value))
+    return (
+      <Panel title={`Header · ${widget.name}`} onClose={onClose}>
+        {/* headers edit only their own viewports (desktop + mobile) */}
+        <ViewportProvider viewports={widget.viewports}>
+          <div className="p-3">
+            <ConfigPanel key={item.id} schema={widget.schema} config={item.config as Config} onChange={onChange} />
+          </div>
+        </ViewportProvider>
       </Panel>
     )
   }

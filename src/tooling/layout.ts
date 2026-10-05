@@ -1,4 +1,5 @@
-import type { Decls } from './stylesheet'
+import type { ResponsiveValue, Viewport } from './responsive'
+import type { Decls, SheetVar } from './stylesheet'
 import type { Config, LeafField } from './types'
 
 /** Standard "Max width / 100%" option for a widget's own block. Add `widthMode` + `maxWidth` to the config. */
@@ -35,4 +36,15 @@ export function widthDecls(c: WidthConfig, varName: string): Decls {
 
 export function widthVars(c: WidthConfig, varName: string) {
   return c.widthMode === 'full' ? [] : [{ name: varName, value: `${c.maxWidth}px`, group: 'Layout' as const }]
+}
+
+/** A px size as a variable, plus `-tablet` / `-mobile` variables only where it changes. */
+export function sizeVar(name: string, r: ResponsiveValue<number>) {
+  const vars: SheetVar[] = [
+    { name, value: `${r.desktop}px`, group: 'Layout' },
+    ...(['tablet', 'mobile'] as const).flatMap((vp) => (r[vp] === undefined ? [] : [{ name: `${name}-${vp}`, value: `${r[vp]}px`, group: 'Layout' as const }])),
+  ]
+  /** The variable in effect at a viewport. */
+  const at = (vp: Viewport) => (vp === 'mobile' && r.mobile !== undefined ? `$$${name}-mobile` : vp !== 'desktop' && r.tablet !== undefined ? `$$${name}-tablet` : `$$${name}`)
+  return { vars, at, changed: (vp: 'tablet' | 'mobile') => r[vp] !== undefined }
 }

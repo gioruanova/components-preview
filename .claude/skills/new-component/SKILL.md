@@ -11,6 +11,7 @@ Read `CLAUDE.md` (golden rules) and the field and style sections of `docs/refere
 - `src/widgets/cards/cards-grid/`: repeatable items (list + count), grid, hover, per-item rules.
 
 ## 0. Spec
+- **Mirror sites first:** if the component exists on the Saffire starter sites (see `docs/mirror-sites.md`), run the `/mirror-sites` steps to get its real markup, behavior and default styles, and set `starterLayouts` for the sites that use it.
 - If the user gave a spec path, read it.
 - If not, copy `docs/component-spec.template.md` to `docs/specs/<category>--<component>.md` and fill it from what the user provided (HTML, CSS, script, data, a live URL). Ask only about gaps that change the output: category, options, rendering rules.
 - To turn a "coming soon" item into a real component, use the **same slug** as the `upcoming` entry, then delete that entry from `category.ts`.

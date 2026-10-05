@@ -7,6 +7,7 @@ argument-hint: "<category>/<component> <what to change | path to change request>
 # Update component
 
 1. Read `CLAUDE.md`, then the target folder `src/widgets/<category>/<component>/` and its spec `docs/specs/<category>--<component>.md`. Open `docs/reference.md` only for the sections you need.
+   If the change should match the live Saffire sites, check them first with the `/mirror-sites` steps (`docs/mirror-sites.md`).
 2. Sort each requested change into one of these kinds:
    - **Option**: edit `schema.ts`. Add it to the type, defaults and the right section. Client-editable text goes in A, toggles in B "Show / hide", styles in C.
    - **Rendering rule**: update the shared helper in `codegen.ts` used by both Preview and codegen. Never patch only one of them.

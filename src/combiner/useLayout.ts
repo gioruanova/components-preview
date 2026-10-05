@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { exampleLayout, loadLayout, saveLayout, type Layout } from './model'
 
-export type Selection = { type: 'heading'; id: string } | { type: 'section'; id: string } | { type: 'item'; id: string } | null
+export type Selection = { type: 'heading'; id: string } | { type: 'section'; id: string } | { type: 'item'; id: string } | { type: 'siteHeader' } | null
 
 /** Layout state, saved to this browser on every change. */
 export function useLayout() {

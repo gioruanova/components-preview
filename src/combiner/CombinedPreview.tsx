@@ -20,8 +20,7 @@ export function CombinedPreview({ layout, guides }: { layout: Layout; guides: bo
         return [...sectionSheets(s), ...(isHeadingEmpty(h) ? [] : [headingSheet(`#cs-${s.id}`, h, `${s.settings.name} — heading`)])]
       }),
     )
-    const itemCss = layout.sections
-      .flatMap((s) => s.columns.flatMap((c) => c.items))
+    const itemCss = [...(layout.siteHeader ? [layout.siteHeader] : []), ...layout.sections.flatMap((s) => s.columns.flatMap((c) => c.items))]
       .map((item) => {
         const widget = findWidgetByKey(item.widget)
         // the section container provides the spacing: no extra wrapper padding
@@ -31,8 +30,18 @@ export function CombinedPreview({ layout, guides }: { layout: Layout; guides: bo
     // uploads: background images resolve from the upload store
   }, [layout, guides, uploads])
 
+  // Site header: always at the very top, outside the sections (only Header components)
+  const headerWidget = layout.siteHeader && findWidgetByKey(layout.siteHeader.widget)
+  const siteHeader =
+    layout.siteHeader && headerWidget ? (
+      <div className="combiner-site-header" data-label="Header">
+        <headerWidget.Preview config={layout.siteHeader.config} />
+      </div>
+    ) : null
+
   return (
     <PreviewFrame css={css} empty={false}>
+      {siteHeader}
       {layout.sections.length === 0 ? (
         <p style={{ padding: 48, textAlign: 'center', color: '#5b6672', font: '15px system-ui, sans-serif' }}>Add a section to start building.</p>
       ) : (

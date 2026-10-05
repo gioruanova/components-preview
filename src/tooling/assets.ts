@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
+import saffireLogoBlue from '@/assets/saffire-loog-blue.png'
 import type { ImageLibrary } from './types'
 
 /**
@@ -7,8 +8,10 @@ import type { ImageLibrary } from './types'
  *   ''              → none
  *   'sample:<id>'   → built-in soft background decoration (SVG)            — library 'background'
  *   'icon:<id>'     → built-in placeholder icon (SVG, white strokes)         — library 'icon'
+ *   'logo:<id>'     → built-in placeholder logo (SVG)                        — library 'logo'
  *   'upload:<id>'   → user upload, kept in this browser's localStorage. Backgrounds become JPEG (max 1600px);
- *                     icons must be PNG and stay PNG (transparency kept, max 256px).
+ *                     icons must be PNG and stay PNG (transparency kept, max 256px);
+ *                     logos are PNG or JPG and keep their format (max 800px).
  */
 
 const svg = (body: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">${body}</svg>`)}`
@@ -66,6 +69,29 @@ export const SAMPLE_ICONS = [
   { id: 'user', name: 'User', url: icon('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>') },
 ] as const
 
+const logo = (body: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120">${body}</svg>`)}`
+
+/** Built-in logos for the `logo` library (sites upload their own PNG / JPG). `file` = exported asset name. */
+export const SAMPLE_LOGOS = [
+  { id: 'saffire', name: 'Saffire (blue)', file: 'saffire-logo-blue.png', url: saffireLogoBlue },
+  {
+    id: 'placeholder',
+    file: 'placeholder.svg',
+    name: 'Your logo',
+    url: logo(
+      '<circle cx="60" cy="60" r="44" fill="#0079c2"/><path d="M60 30c10 14 18 22 18 34a18 18 0 0 1-36 0c0-12 8-20 18-34Z" fill="#fff"/><text x="118" y="72" font-family="Poppins, Arial, sans-serif" font-size="38" font-weight="700" fill="#0079c2">Your Logo</text>',
+    ),
+  },
+  {
+    id: 'placeholder-dark',
+    file: 'placeholder-dark.svg',
+    name: 'Your logo (dark)',
+    url: logo(
+      '<rect x="16" y="16" width="88" height="88" rx="18" fill="#313841"/><path d="M38 78 60 34l22 44Z" fill="#ffa700"/><text x="118" y="72" font-family="Poppins, Arial, sans-serif" font-size="38" font-weight="700" fill="#313841">Your Logo</text>',
+    ),
+  },
+] as const
+
 // ---------- uploads (localStorage, with in-memory fallback) ----------
 
 /** `kind` is missing on uploads saved before icons existed: those are backgrounds. */
@@ -108,20 +134,21 @@ export function useUploads() {
   )
 }
 
-/** Downscale to keep localStorage small: backgrounds max 1600px JPEG, icons max 256px PNG (keeps transparency). */
+/** Downscale to keep localStorage small: backgrounds max 1600px JPEG, icons max 256px PNG, logos max 800px (PNG stays PNG). */
 async function downscale(file: File, kind: ImageLibrary): Promise<string> {
-  const max = kind === 'icon' ? 256 : 1600
+  const max = kind === 'icon' ? 256 : kind === 'logo' ? 800 : 1600
   const bitmap = await createImageBitmap(file)
   const ratio = Math.min(1, max / Math.max(bitmap.width, bitmap.height))
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(bitmap.width * ratio)
   canvas.height = Math.round(bitmap.height * ratio)
   canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-  return kind === 'icon' ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.82)
+  const png = kind === 'icon' || (kind === 'logo' && file.type === 'image/png')
+  return png ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.9)
 }
 
 /** File types a library accepts for uploads. */
-export const ACCEPT: Record<ImageLibrary, string> = { background: 'image/*', icon: 'image/png' }
+export const ACCEPT: Record<ImageLibrary, string> = { background: 'image/*', icon: 'image/png', logo: 'image/png,image/jpeg' }
 
 export const uploadsOf = (all: Upload[], kind: ImageLibrary) => all.filter((u) => (u.kind ?? 'background') === kind)
 
@@ -147,6 +174,7 @@ const slug = (s: string) => s.toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(
 export function previewUrl(ref: string): string | null {
   if (ref.startsWith('sample:')) return SAMPLE_IMAGES.find((s) => `sample:${s.id}` === ref)?.url ?? null
   if (ref.startsWith('icon:')) return SAMPLE_ICONS.find((s) => `icon:${s.id}` === ref)?.url ?? null
+  if (ref.startsWith('logo:')) return SAMPLE_LOGOS.find((s) => `logo:${s.id}` === ref)?.url ?? null
   if (ref.startsWith('upload:')) return uploads.find((u) => `upload:${u.id}` === ref)?.url ?? null
   return null
 }
@@ -155,10 +183,16 @@ export function previewUrl(ref: string): string | null {
 export function outputPath(ref: string): string | null {
   if (ref.startsWith('sample:')) return `/assets/bg-${ref.slice(7)}.svg`
   if (ref.startsWith('icon:')) return `/assets/icons/${ref.slice(5)}.svg`
+  if (ref.startsWith('logo:')) {
+    const sample = SAMPLE_LOGOS.find((s) => `logo:${s.id}` === ref)
+    return sample ? `/assets/logo/${sample.file}` : null
+  }
   if (ref.startsWith('upload:')) {
     const u = uploads.find((x) => `upload:${x.id}` === ref)
     if (!u) return null
-    return u.kind === 'icon' ? `/assets/icons/${slug(u.name) || 'icon'}.png` : `/assets/${slug(u.name) || 'background'}.jpg`
+    if (u.kind === 'icon') return `/assets/icons/${slug(u.name) || 'icon'}.png`
+    if (u.kind === 'logo') return `/assets/logo/${slug(u.name) || 'logo'}.${u.url.startsWith('data:image/png') ? 'png' : 'jpg'}`
+    return `/assets/${slug(u.name) || 'background'}.jpg`
   }
   return null
 }

@@ -15,6 +15,7 @@ Vite + React 19 + TS + Tailwind v4 + shadcn/ui tool to preview and configure Saf
 - `docs/output-integration.md`: how to adopt the real source-code structure and nomenclature when it arrives.
 - `output-standards/`: the Prettier + Stylelint configs the generated code must follow (see its README).
 - `docs/brief/`: the original brief, brand references and logos.
+- `docs/mirror-sites.md`: the six Saffire starter sites (Mango, Banana, Grape, Cherry, Peach, Lemon), the functional and visual reference for every component.
 
 ## Golden rules (every component)
 1. Content (A) = **only what the client edits** (texts, labels, URLs, items). Show/hide toggles go in B → "Show / hide". Styles go in C.
@@ -31,6 +32,7 @@ Vite + React 19 + TS + Tailwind v4 + shadcn/ui tool to preview and configure Saf
 12. Generated SCSS/CSS must pass `npm run check:output` (`output-standards/`: Stylelint + Prettier, SCSS ≡ CSS ≡ preview). Fix the generator, not the widget.
 
 ## Skills
+- `/mirror-sites <component>`: study a component on the Saffire starter sites (markup, behavior, styles) before defining it.
 - `/new-component <spec>`: build a component from a filled spec.
 - `/update-component <category>/<component> <change>`: change an existing one.
 - `/new-category <name>`: add a category, or planned "coming soon" items.

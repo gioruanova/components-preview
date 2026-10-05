@@ -2,14 +2,21 @@ import { LayoutTemplate } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { STARTER_LAYOUTS, type StarterLayoutId } from './starterLayouts'
 
-/** One starter layout pill (colors come from STARTER_LAYOUTS). */
+/** One starter layout pill (colors come from STARTER_LAYOUTS); links to its mirror site in a new tab. */
 export function StarterLayoutPill({ id }: { id: StarterLayoutId }) {
   const s = STARTER_LAYOUTS[id]
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: s.background, color: s.text }}>
+    <a
+      href={s.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Open the ${s.name} starter site (new tab)`}
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition hover:brightness-95 hover:underline"
+      style={{ background: s.background, color: s.text }}
+    >
       <span aria-hidden className="size-2 rounded-full" style={{ background: s.color }} />
       {s.name}
-    </span>
+    </a>
   )
 }
 

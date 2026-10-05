@@ -40,6 +40,9 @@ src/
 - Sorting is done by `byOrder` in `tooling/registry.ts`.
 - A real component folder whose slug matches an `upcoming` item replaces that placeholder.
 
+## Category heads-up
+- `headsUp: { quote, note }` in a `category.ts` shows a friendly advice / watch-out quote (`tooling/HeadsUp.tsx`) on the category overview and on every component page of that category (e.g. Header: limited space, client-managed content).
+
 ## Starter layout usage
 - The Saffire starter layouts (Cherry, Mango, Banana, Peach, Grape, Lemon…) live in one place: `tooling/starterLayouts.ts` (name + pill colors). Add a new one there once.
 - A component lists the layouts that use it with `starterLayouts: ['mango', 'peach']`, on its `defineWidget({...})` or on an `upcoming` entry in `category.ts`. Ids are typed, so a typo fails typecheck.
@@ -48,7 +51,7 @@ src/
 ## Field types
 | type | use for | notes |
 |---|---|---|
-| `text` / `textarea` | texts, URLs, IDs | `placeholder`, `rows` |
+| `text` / `textarea` | texts, URLs, IDs | `placeholder`, `rows`, `maxLength` (text: hard limit for short labels) |
 | `switch` | On/Off (show/hide → Widget configuration) | `hint` |
 | `select` | long option lists | `options` |
 | `segmented` | 2–5 exclusive options (shape, alignment, position) | `options` |
@@ -57,7 +60,7 @@ src/
 | `stepper` | small integer counts | `min/max` |
 | `typography` | every text element | `typography({...})`: family, size, weight, italic, line height, spacing, case, color, clamp + lines |
 | `buttonStyle` | per-button custom style | `buttonStyle({...})`: switch + panel (bg, hover bg/text, font, radius, border, shadow, padding) |
-| `image` | images (also as a `list` item field) | `library: 'background'` (default: none / 5 decorations / any image upload → JPEG) or `'icon'` (none / 8 placeholder SVG icons / **PNG-only** uploads, kept as PNG). Value = reference (`icon:<id>`, `upload:<id>`…); resolve with `previewUrl()` in Preview and `outputPath()` in Data (`/assets/icons/…`) |
+| `image` | images (also as a `list` item field) | `library: 'background'` (default: none / 5 decorations / any image upload → JPEG), `'icon'` (none / 8 placeholder SVG icons / **PNG-only** uploads, kept as PNG) or `'logo'` (placeholder logos / **PNG or JPG** uploads, format kept, `/assets/logo/…`). Value = reference (`icon:<id>`, `upload:<id>`…); resolve with `previewUrl()` in Preview and `outputPath()` in Data (`/assets/icons/…`) |
 | `list` | repeatable items | `itemFields` (`text` / `textarea` / `image` + `library`), `countKey` (stepper), `newItem`, `itemLabel` |
 | `group` | visual grouping ("Show / hide", "Button 1", "Typography") | not a value; can have `visibleWhen` |
 
@@ -80,6 +83,7 @@ Every field accepts `visibleWhen(config)`, `help` and `tip` (an info tooltip). L
 - In `styles.ts`: `const r = responsive(c, 'key')` → `r.desktop`, `r.tablet` / `r.mobile` (only when they change, otherwise undefined) and `r.at[vp]` (effective values). Build an `at(vp)` rule whose declarations use `r[vp]`. Undefined declarations are dropped, so media blocks only contain real differences.
 - Typography: `responsiveType(prefix, responsive(c, 'xFont'), fluidOptions?)` → `base` / `tablet` / `mobile` (decls + clamp) and `vars`. Overrides get their own variables (`$x-font-size-tablet`).
 - **Media overrides must use the same selectors and nesting as the base rules** (same specificity). `standards.test.ts` fails otherwise.
+- Media blocks take a profile breakpoint (`'tablet'` / `'mobile'`) or a custom max-width number (`{ media: 1024, rules }` → `@media (max-width: 1024px)` in CSS and SCSS), e.g. a header's own collapse point.
 - Container queries: a `ContainerBlock` (`{ container: name, minWidth, rules }`) renders `@container <name> (min-width: Npx)`, at sheet level or inside a media block. Use it for rules that depend on the width the widget gets (e.g. inside a Layout builder column) rather than the viewport. The ancestor needs `container-name` + `container-type: inline-size`, and the rules reuse the base selectors. Example: `tooling/itemRow.ts` ("Keep card size" in Cards Grid / Hot Buttons). For a row of equal items, use `itemRow()` instead of re-implementing it.
 - Already responsive: SEO alignment, padding, typography and "Stack buttons". Cards per row, width, min width, height, aspect ratio, content position and typography. Container padding.
 
@@ -105,6 +109,8 @@ Every field accepts `visibleWhen(config)`, `help` and `tip` (an info tooltip). L
   - Inner content max width and padding.
   - Background color, and background image + position (always cover).
 - Markup: `.{profile.classNames.container} > .{containerInner}`. The Layout builder reuses the same fields (`containerOptionFields`) per section.
+- A widget can limit its viewports with `viewports: ['desktop', 'mobile']` on `defineWidget`: the preview and the responsive fields then offer only those (headers: own breakpoint, no tablet step).
+- Edge-to-edge widgets (e.g. headers) set `container: false` and `wrapperSpacing: false` on `defineWidget` (no container options, no shared wrapper padding).
 - **Widget spacing (one rule for all widgets).** Each widget keeps its own outer wrapper from the real Saffire markup (`.{widgetId}-container`, `.{widgetId}-signup-container`…, the sheet `scope`, where the CSS variables live), but **widgets never set padding on it**. The tooling adds `padding: WIDGET_SPACING` (`20px 15px`, `container.tsx` → `withWrapperSpacing`) only when nothing around it provides spacing. With "Uses container" on, or inside a Layout builder section (`previewCss(…, { inContainer: true })`), the container padding (and the column gap) is the only spacing, so the wrapper gets none. Covered by `output.test.ts`. Padding *inside* a widget's own box (e.g. the SEO block's background box) is a widget style and stays in C.
 
 ## Buttons and links
@@ -116,6 +122,8 @@ Every field accepts `visibleWhen(config)`, `help` and `tip` (an info tooltip). L
 
 ## Layout builder (Testing POC) — code in `src/combiner/`
 - Optional **section heading + description** per section (`sectionHeading.tsx`): rendered inside the section's container, **outside and above the columns wrapper** (`.section-heading` before `.combiner-columns`). Stored as `section.heading` (merged with `headingDefaults`; copied on duplicate; a legacy layout-level heading migrates to the first section on load). Edited from the section card's "Heading" row like a component: A texts, B show/hide + heading tag (H1–H6), C alignment, per-viewport typography, max width, gap and space below. Styles are scoped per section (`#cs-<id> .section-heading`). Covered by `sectionHeading.test.ts` (standards included).
+- **Headers** share their code in `src/widgets/header/shared/` (`config.ts` options + defaults, `markup.ts` HTML fragments + data + script, `parts.tsx` preview pieces, `styles.ts` element styles + mobile overrides + collapsed grid). A new header only defines its structure and layout (see right-aligned / centered).
+- **Header slot:** the top of the layout has one optional `siteHeader` item (above all sections, outside them). Only components of the `header` category can go there (`setSiteHeader` refuses others), and they can't be added to columns. Edited from the "Header" block at the top of the scheme. The example layout starts with the Right-aligned Menu Header.
 - A layout is made of sections (a container plus 1–3 columns, proportions, lateral gap (between columns) and vertical gap (between components in a column and between stacked columns), both per viewport, alignment and "stack on tablet"; a saved single `gap` migrates to both).
 - **Empty columns are not rendered** (`renderedColumns()` in `model.ts`): a column with no rendered items (none, or only widgets that are "removed" via `isEmpty`) is dropped and the remaining columns share the width with their own proportions (2 columns with one empty → 100%; 2:1:1 with the last empty → 2:1). When every column is empty, all are kept so the structure stays visible. The scheme still shows the column (to drop components in), labelled "empty, hidden".
 - Columns hold component instances, each with its own widget config. Widget IDs are unique per layout.

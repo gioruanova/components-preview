@@ -1,6 +1,8 @@
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
+import type { HeadsUpNote } from './HeadsUp'
 import type { StarterLayoutId } from './starterLayouts'
+import type { Viewport } from './responsive'
 import type { Sheet } from './stylesheet'
 
 /** Config sections, rendered top to bottom in the config panel (Updates §3.1). */
@@ -29,7 +31,8 @@ type BaseField<C extends Config> = {
   visibleWhen?: (config: C) => boolean
 }
 
-export type TextField<C extends Config> = BaseField<C> & { type: 'text'; placeholder?: string }
+/** `maxLength`: hard character limit (short labels such as a search word). */
+export type TextField<C extends Config> = BaseField<C> & { type: 'text'; placeholder?: string; maxLength?: number }
 export type TextareaField<C extends Config> = BaseField<C> & { type: 'textarea'; rows?: number }
 export type SwitchField<C extends Config> = BaseField<C> & { type: 'switch'; hint?: string }
 export type SelectField<C extends Config> = BaseField<C> & { type: 'select'; options: Option[] }
@@ -49,10 +52,11 @@ export type TypographyField<C extends Config> = BaseField<C> & { type: 'typograp
 /** Per-button custom style (switch + panel). Value is a `ButtonStyle` (see tooling/buttons). */
 export type ButtonStyleField<C extends Config> = BaseField<C> & { type: 'buttonStyle' }
 /** Which built-in images and upload rules an image picker uses (see tooling/assets). */
-export type ImageLibrary = 'background' | 'icon'
+export type ImageLibrary = 'background' | 'icon' | 'logo'
 /**
  * Image picker: none / built-in images / uploads. Value is a reference string (see tooling/assets).
- * `library`: 'background' (default: decorations, any image upload → JPEG) or 'icon' (8 placeholder icons, PNG uploads only).
+ * `library`: 'background' (default: decorations, any image upload → JPEG), 'icon' (8 placeholder icons, PNG uploads only)
+ * or 'logo' (placeholder logos, PNG / JPG uploads that keep their format).
  */
 export type ImageField<C extends Config> = BaseField<C> & { type: 'image'; library?: ImageLibrary }
 
@@ -128,6 +132,10 @@ export type WidgetDefinition<C extends Config = Config> = {
   isEmpty?: (config: C) => boolean
   /** Set to false to hide the global "Uses container" options. */
   container?: false
+  /** Set to false for edge-to-edge widgets (e.g. a header): no shared outer spacing on the wrapper. */
+  wrapperSpacing?: false
+  /** Viewports offered in the preview and on responsive fields (default all three). E.g. a header: ['desktop', 'mobile']. */
+  viewports?: Viewport[]
   /** Starter layouts that use this component → "Starter layout usage" pills (see tooling/starterLayouts.ts). */
   starterLayouts?: StarterLayoutId[]
 }
@@ -138,6 +146,8 @@ export type CategoryDefinition = {
   /** Shown in the collapsed (icon-only) sidebar. */
   icon?: LucideIcon
   order?: number
+  /** Friendly advice / watch-out for the whole category: shown on its overview and on each of its component pages. */
+  headsUp?: HeadsUpNote
   /** Planned components: listed in the nav with a "coming soon" page until a real folder replaces them. */
   upcoming?: { name: string; summary?: string; starterLayouts?: StarterLayoutId[] }[]
 }

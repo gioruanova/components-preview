@@ -114,6 +114,12 @@ export const GUIDES_CSS = `
     padding: 2px 8px; border-bottom-right-radius: 6px;
     background: #007bc7; color: #fff; font: 600 11px/1.6 system-ui, sans-serif;
   }
+  .combiner-site-header { position: relative; outline: 1px dashed rgba(142, 68, 173, 0.6); outline-offset: -1px; }
+  .combiner-site-header::before {
+    content: attr(data-label); position: absolute; bottom: 0; left: 0; z-index: 50;
+    padding: 2px 8px; border-top-right-radius: 6px;
+    background: #8e44ad; color: #fff; font: 600 11px/1.6 system-ui, sans-serif;
+  }
   .section-heading { outline: 1px dashed rgba(102, 187, 106, 0.8); outline-offset: 4px; }
   .combiner-column { outline: 1px dashed rgba(242, 105, 34, 0.55); outline-offset: 2px; min-height: 48px; }
   .combiner-empty {
