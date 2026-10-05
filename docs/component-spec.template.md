@@ -10,6 +10,7 @@
 - **Status:** stable | beta | draft | deprecated
 - **Summary (one line):** <shown on the category overview>
 - **Order in category:** <number, lower first — optional>
+- **Starter layout usage:** <starter layouts that use it, e.g. Mango, Peach — optional; ids from `src/tooling/starterLayouts.ts`>
 
 ## 2. Functional description
 Bullets shown at the top of the page. Wrap code in backticks.

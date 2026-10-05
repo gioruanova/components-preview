@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
+import type { StarterLayoutId } from './starterLayouts'
 import type { Sheet } from './stylesheet'
 
 /** Config sections, rendered top to bottom in the config panel (Updates §3.1). */
@@ -47,16 +48,23 @@ export type StepperField<C extends Config> = BaseField<C> & { type: 'stepper'; m
 export type TypographyField<C extends Config> = BaseField<C> & { type: 'typography' }
 /** Per-button custom style (switch + panel). Value is a `ButtonStyle` (see tooling/buttons). */
 export type ButtonStyleField<C extends Config> = BaseField<C> & { type: 'buttonStyle' }
-/** Background image picker: none / sample decorations / uploads. Value is a reference string (see tooling/assets). */
-export type ImageField<C extends Config> = BaseField<C> & { type: 'image' }
+/** Which built-in images and upload rules an image picker uses (see tooling/assets). */
+export type ImageLibrary = 'background' | 'icon'
+/**
+ * Image picker: none / built-in images / uploads. Value is a reference string (see tooling/assets).
+ * `library`: 'background' (default: decorations, any image upload → JPEG) or 'icon' (8 placeholder icons, PNG uploads only).
+ */
+export type ImageField<C extends Config> = BaseField<C> & { type: 'image'; library?: ImageLibrary }
 
 /** Fields shown for each item of a `list` field. Keys refer to the item object. */
 export type ItemField = {
   key: string
   label: string
-  type: 'text' | 'textarea'
+  type: 'text' | 'textarea' | 'image'
   placeholder?: string
   tip?: string
+  /** For `image` item fields. */
+  library?: ImageLibrary
 }
 
 /** Repeatable items (e.g. cards). When `countKey` is set, that number field decides how many are shown. */
@@ -120,6 +128,8 @@ export type WidgetDefinition<C extends Config = Config> = {
   isEmpty?: (config: C) => boolean
   /** Set to false to hide the global "Uses container" options. */
   container?: false
+  /** Starter layouts that use this component → "Starter layout usage" pills (see tooling/starterLayouts.ts). */
+  starterLayouts?: StarterLayoutId[]
 }
 
 export type CategoryDefinition = {
@@ -129,7 +139,7 @@ export type CategoryDefinition = {
   icon?: LucideIcon
   order?: number
   /** Planned components: listed in the nav with a "coming soon" page until a real folder replaces them. */
-  upcoming?: { name: string; summary?: string }[]
+  upcoming?: { name: string; summary?: string; starterLayouts?: StarterLayoutId[] }[]
 }
 
 /** Identity helper so widget files get full type inference on their config. */

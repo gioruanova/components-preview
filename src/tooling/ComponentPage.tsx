@@ -7,6 +7,7 @@ import { ConfigPanel } from './ConfigPanel'
 import { ContainerPreview, type ContainerConfig } from './container'
 import { outputFiles, previewCss } from './output'
 import { PreviewFrame } from './PreviewFrame'
+import { StarterLayoutUsage } from './StarterLayoutUsage'
 import type { RegisteredWidget } from './registry'
 import type { Config } from './types'
 import { InfoTip, RichText, StatusBadge } from './ui'
@@ -56,6 +57,8 @@ function ComponentPageBody({ widget }: { widget: RegisteredWidget }) {
           ))}
         </ul>
       </section>
+
+      <StarterLayoutUsage layouts={widget.starterLayouts} />
 
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
         <div className="order-2 min-w-0 lg:order-1">

@@ -213,7 +213,7 @@ function LeafControl<C extends Config>({
     case 'image':
       return (
         <Row id={id} label={field.label} help={field.help} tip={field.tip}>
-          <ImagePicker id={id} value={String(value ?? '')} onChange={set} />
+          <ImagePicker id={id} value={String(value ?? '')} onChange={set} library={field.library} />
         </Row>
       )
     case 'list':
@@ -247,6 +247,13 @@ function ListEditor<C extends Config>({ field, config, onChange }: { field: List
             <AccordionContent className="space-y-3 pb-3">
               {field.itemFields.map((f) => {
                 const id = `field-${field.key}-${i}-${f.key}`
+                if (f.type === 'image') {
+                  return (
+                    <Row key={f.key} id={id} label={f.label} tip={f.tip}>
+                      <ImagePicker id={id} value={String(item[f.key] ?? '')} onChange={(v) => update(i, f.key, v)} library={f.library} />
+                    </Row>
+                  )
+                }
                 const Control = f.type === 'textarea' ? Textarea : Input
                 return (
                   <Row key={f.key} id={id} label={f.label} tip={f.tip}>

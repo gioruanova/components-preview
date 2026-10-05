@@ -1,4 +1,5 @@
 import { containerOptionFields, containerSheet } from '@/tooling/container'
+import { responsive } from '@/tooling/responsive'
 import type { Sheet } from '@/tooling/stylesheet'
 import type { FieldDef } from '@/tooling/types'
 import { renderedColumns, type Section, type SectionSettings } from './model'
@@ -37,7 +38,8 @@ export const sectionFields: FieldDef<SectionSettings>[] = [
           { value: '1:1:2', label: '1 : 1 : 2 (25% / 25% / 50%)' },
         ],
       },
-      { type: 'slider', key: 'gap', label: 'Gap', min: 0, max: 80, step: 4, unit: 'px' },
+      { type: 'slider', key: 'columnGap', label: 'Lateral gap', min: 0, max: 120, step: 4, unit: 'px', responsive: true, help: 'Between columns side by side', visibleWhen: (s) => s.columns > 1 },
+      { type: 'slider', key: 'rowGap', label: 'Vertical gap', min: 0, max: 120, step: 4, unit: 'px', responsive: true, help: 'Between components in a column, and between columns once they stack' },
       {
         type: 'segmented',
         key: 'align',
@@ -70,17 +72,35 @@ export function sectionSheets(s: Section): Sheet[] {
     .map((c) => `minmax(0, ${c.fraction}fr)`)
     .join(' ')
   const container = containerSheet({ ...s.settings, useContainer: true }, 'preview', sel, s.settings.name)
+  const colGap = responsive(s.settings, 'columnGap')
+  const rowGap = responsive(s.settings, 'rowGap')
+  const px = (v: number | undefined) => (v === undefined ? undefined : `${v}px`)
+  const stack = { 'grid-template-columns': 'minmax(0, 1fr)' }
+  /** Tablet / mobile: stacking + only the gaps that change. */
+  const at = (vp: 'tablet' | 'mobile') => ({
+    media: vp,
+    rules: [
+      { sel: `${sel} .combiner-columns`, decls: { ...(vp === 'mobile' || s.settings.stackOnTablet ? stack : {}), 'column-gap': px(colGap[vp]), 'row-gap': px(rowGap[vp]) } },
+      { sel: `${sel} .combiner-column`, decls: { gap: px(rowGap[vp]) } },
+    ],
+  })
   const grid: Sheet = {
     scope: sel,
     vars: [],
     rules: [
       {
         sel: `${sel} .combiner-columns`,
-        decls: { display: 'grid', 'grid-template-columns': tracks, gap: `${s.settings.gap}px`, 'align-items': s.settings.align },
+        decls: {
+          display: 'grid',
+          'grid-template-columns': tracks,
+          'column-gap': px(colGap.desktop),
+          'row-gap': px(rowGap.desktop),
+          'align-items': s.settings.align,
+        },
       },
-      { sel: `${sel} .combiner-column`, decls: { display: 'flex', 'flex-direction': 'column', gap: `${s.settings.gap}px`, 'min-width': 0 } },
-      ...(s.settings.stackOnTablet ? [{ media: 'tablet' as const, rules: [{ sel: `${sel} .combiner-columns`, decls: { 'grid-template-columns': 'minmax(0, 1fr)' } }] }] : []),
-      { media: 'mobile', rules: [{ sel: `${sel} .combiner-columns`, decls: { 'grid-template-columns': 'minmax(0, 1fr)' } }] },
+      { sel: `${sel} .combiner-column`, decls: { display: 'flex', 'flex-direction': 'column', gap: px(rowGap.desktop), 'min-width': 0 } },
+      at('tablet'),
+      at('mobile'),
     ],
   }
   return [...(container ? [container] : []), grid]

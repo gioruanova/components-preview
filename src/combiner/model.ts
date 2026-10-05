@@ -17,7 +17,10 @@ export type SectionSettings = Omit<ContainerConfig, 'useContainer'> & {
   columns: number
   ratio2: Ratio2
   ratio3: Ratio3
-  gap: number
+  /** Lateral gap: between columns side by side. */
+  columnGap: number
+  /** Vertical gap: between components in a column, and between columns once they stack. */
+  rowGap: number
   align: 'stretch' | 'start' | 'center' | 'end'
   stackOnTablet: boolean
 }
@@ -71,7 +74,8 @@ export const sectionDefaults = (name: string): SectionSettings => ({
   columns: 1,
   ratio2: '1:1',
   ratio3: '1:1:1',
-  gap: 24,
+  columnGap: 24,
+  rowGap: 24,
   align: 'stretch',
   stackOnTablet: true,
 })
@@ -299,7 +303,10 @@ export function loadLayout(): Layout {
     return {
       version: 1,
       sections: saved.sections.map((s, i) => {
-        const settings = { ...sectionDefaults(s.settings?.name ?? 'Section'), ...s.settings }
+        // legacy: one `gap` for both directions
+        const { gap, ...savedSettings } = (s.settings ?? {}) as Partial<SectionSettings> & { gap?: number }
+        const legacyGap = typeof gap === 'number' ? { columnGap: gap, rowGap: gap } : {}
+        const settings = { ...sectionDefaults(s.settings?.name ?? 'Section'), ...legacyGap, ...savedSettings }
         const heading = s.heading && typeof s.heading === 'object' ? s.heading : i === 0 ? legacy : undefined
         return {
           id: s.id,

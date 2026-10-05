@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { toCss } from '@/tooling/stylesheet'
 import {
   addItem,
@@ -10,10 +10,13 @@ import {
   findWidgetByKey,
   moveItem,
   moveSection,
+  loadLayout,
   removeItem,
   renderedColumns,
+  STORAGE_KEY,
   updateSectionSettings,
   type Layout,
+  type SectionSettings,
 } from './model'
 import { sectionSheets } from './sections'
 
@@ -64,12 +67,35 @@ describe('combiner model', () => {
   })
 
   it('turns proportions into grid tracks that stack on small screens', () => {
-    const l = addSection(empty(), { columns: 3, ratio3: '1:2:1', gap: 16 })
+    const l = addSection(empty(), { columns: 3, ratio3: '1:2:1', columnGap: 16 })
     expect(columnFractions(l.sections[0].settings)).toEqual([1, 2, 1])
     const css = toCss(sectionSheets(l.sections[0]))
     expect(css).toContain('grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);')
     expect(css).toContain('@media (max-width: 480px)')
     expect(css).toContain(`#cs-${l.sections[0].id} {`)
+  })
+
+  it('has separate lateral and vertical gaps, per viewport', () => {
+    const l = addSection(empty(), { columns: 2, columnGap: 40, rowGap: 12, 'rowGap@mobile': 8 } as Partial<SectionSettings>)
+    const css = toCss(sectionSheets(l.sections[0]))
+    expect(css).toMatch(/\.combiner-columns \{[^}]*column-gap: 40px;/)
+    expect(css).toMatch(/\.combiner-columns \{[^}]*row-gap: 12px;/)
+    expect(css).toMatch(/\.combiner-column \{[^}]*gap: 12px;/)
+    const mobile = css.slice(css.lastIndexOf('@media (max-width: 480px)')) // the grid's block (the container has its own)
+    expect(mobile).toMatch(/\.combiner-columns \{[^}]*row-gap: 8px;/)
+    expect(mobile).toMatch(/\.combiner-column \{[^}]*gap: 8px;/)
+    expect(mobile).not.toContain('column-gap')
+  })
+
+  it('migrates a saved single gap to both gaps', () => {
+    const l = addSection(empty())
+    const legacy = { ...l, sections: l.sections.map((s) => ({ ...s, settings: { ...s.settings, columnGap: undefined, rowGap: undefined, gap: 32 } })) }
+    const store = new Map([[STORAGE_KEY, JSON.stringify(legacy)]])
+    vi.stubGlobal('localStorage', { getItem: (k: string) => store.get(k) ?? null })
+    const loaded = loadLayout().sections[0].settings
+    vi.unstubAllGlobals()
+    expect([loaded.columnGap, loaded.rowGap]).toEqual([32, 32])
+    expect('gap' in loaded).toBe(false)
   })
 
   it('drops empty columns so the others take the full width', () => {

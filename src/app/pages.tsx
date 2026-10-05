@@ -84,7 +84,7 @@ export function WidgetPage() {
   return (
     <div className="space-y-4">
       <Breadcrumb category={category} name={(widget ?? upcoming)!.name} />
-      {widget ? <ComponentPage key={widget.path} widget={widget} /> : <ComingSoon category={category} name={upcoming!.name} summary={upcoming!.summary} />}
+      {widget ? <ComponentPage key={widget.path} widget={widget} /> : <ComingSoon category={category} name={upcoming!.name} summary={upcoming!.summary} starterLayouts={upcoming!.starterLayouts} />}
     </div>
   )
 }

@@ -10,5 +10,6 @@ export default defineCategory({
     { name: 'Backgrounds', summary: 'Decorative section backgrounds: colors, images and patterns.' },
     { name: 'Pop ups', summary: 'Modal announcements and promos with display rules.' },
     { name: 'Signup', summary: 'Newsletter and account sign-up forms.' },
+    { name: 'Social Feed', summary: 'Latest posts from the venue’s social media accounts.' },
   ],
 })

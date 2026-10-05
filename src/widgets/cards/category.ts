@@ -6,5 +6,4 @@ export default defineCategory({
   description: 'Image-led card collections for events, offers and listings.',
   icon: LayoutGrid,
   order: 2,
-  upcoming: [{ name: 'Hot Buttons', summary: 'Big, bold shortcut tiles to the most important pages.' }],
 })

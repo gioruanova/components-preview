@@ -17,7 +17,7 @@ const widgetModules = import.meta.glob<{ default: WidgetDefinition<Config> }>(
 )
 
 export type RegisteredWidget = WidgetDefinition<Config> & { slug: string; categorySlug: string; path: string }
-export type UpcomingWidget = { name: string; summary?: string; slug: string; categorySlug: string; path: string }
+export type UpcomingWidget = NonNullable<CategoryDefinition['upcoming']>[number] & { slug: string; categorySlug: string; path: string }
 export type RegisteredCategory = CategoryDefinition & {
   slug: string
   path: string

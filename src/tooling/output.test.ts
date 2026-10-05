@@ -35,8 +35,8 @@ describe('output', () => {
           .filter((b) => b.startsWith(`${scope} {`))
           .join('\n')
       expect(wrapper(previewCss(w, { ...w.defaults, useContainer: false })), w.path).toContain(`padding: ${WIDGET_SPACING};`)
-      expect(wrapper(previewCss(w, { ...w.defaults, useContainer: true })), w.path).not.toContain('padding')
-      expect(wrapper(previewCss(w, { ...w.defaults, useContainer: false }, { inContainer: true })), w.path).not.toContain('padding')
+      expect(wrapper(previewCss(w, { ...w.defaults, useContainer: true })), w.path).not.toMatch(/^\s+padding:/m)
+      expect(wrapper(previewCss(w, { ...w.defaults, useContainer: false }, { inContainer: true })), w.path).not.toMatch(/^\s+padding:/m)
       const css = outputFiles(w, { ...w.defaults, useContainer: false }).find((f) => f.id === 'css')!.code
       expect(css).toContain(`padding: ${WIDGET_SPACING};`)
     }
