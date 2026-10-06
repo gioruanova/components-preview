@@ -1,5 +1,5 @@
 import { Suspense, useState } from 'react'
-import { FlaskConical, Menu, PanelLeftClose, PanelLeftOpen, Presentation } from 'lucide-react'
+import { FlaskConical, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import logo from '@/assets/tool-logo.png'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { Button } from '@/components/ui/button'
@@ -116,15 +116,8 @@ export function Layout() {
             </SheetContent>
           </Sheet>
           <Brand />
-          <NavLink
-            to="/benchmark"
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-white/40 px-3 py-1 text-xs font-bold tracking-wide text-white uppercase transition hover:bg-white/15"
-            title="Why we built this tool: benchmark vs market tools"
-          >
-            <Presentation className="size-3.5" /> Benchmark
-          </NavLink>
           <span
-            className="inline-flex items-center gap-1.5 rounded-full bg-brand-orange px-3 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-sm"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-brand-orange px-3 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-sm"
             title="Proof of concept for testing — not a production tool"
           >
             <FlaskConical className="size-3.5" /> Testing POC

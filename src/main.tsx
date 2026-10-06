@@ -1,4 +1,4 @@
-import { lazy, StrictMode, Suspense } from 'react'
+import { lazy, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { Toaster } from 'sonner'
@@ -24,23 +24,12 @@ window.addEventListener('load', () => setTimeout(() => sessionStorage.removeItem
 
 // Heavy, rarely-first routes are code-split (dnd-kit etc. only load when the Layout builder opens)
 const CombinerPage = lazy(() => import('./combiner/CombinerPage').then((m) => ({ default: m.CombinerPage })))
-// Hidden presentation (not in the nav): /benchmark
-const BenchmarkPage = lazy(() => import('./app/BenchmarkPage').then((m) => ({ default: m.BenchmarkPage })))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <TooltipProvider delayDuration={300}>
       <BrowserRouter>
         <Routes>
-          {/* full screen, outside the app layout */}
-          <Route
-            path="benchmark"
-            element={
-              <Suspense fallback={null}>
-                <BenchmarkPage />
-              </Suspense>
-            }
-          />
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
             <Route path="layout-builder" element={<CombinerPage />} />
