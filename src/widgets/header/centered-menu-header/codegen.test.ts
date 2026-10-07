@@ -26,6 +26,11 @@ describe('centered header markup (startercherry)', () => {
 
   it('shares the element rules with the right-aligned header (ticket URL, visibility, data)', () => {
     expect(toHtml(defaults)).toContain(`href="${TICKET_URL}"`)
+    expect(toHtml(cfg({ ticketCustomUrl: true, ticketUrl: '/p/passes', ticketNewTab: true }))).toContain('href="${TicketURL}" target="_blank"')
+    expect(toHtml(cfg({ ticketCustomUrl: true, ticketUrl: '' }))).not.toContain('customTicketButton')
+    // navigation off: no menu bar, no burger
+    expect(toHtml(cfg({ showNav: false }))).not.toMatch(/bottom-header|mobile-nav-toggle|mainNavigation/)
+    expect(toCss([styles(cfg({ showNav: false }))])).not.toMatch(/bottom-header|mobile-nav-toggle|--header-nav-bg/)
     expect(toHtml(cfg({ showCountdown: false, countdownMobile: false }))).not.toContain('header-countdown')
     const { data, script } = codegen(cfg({ widgetId: 'siteHeader' }))
     expect((data as { Layout: string }).Layout).toBe('centered')

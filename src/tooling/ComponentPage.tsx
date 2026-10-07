@@ -79,10 +79,11 @@ function ComponentPageBody({ widget }: { widget: RegisteredWidget }) {
           Output code
           <InfoTip label="About the output code">
             Generated live from the configuration above. <b>HTML</b>: markup with data placeholders. <b>SCSS</b> / <b>CSS</b>: styles with
-            variables for colors, fonts and sizes. <b>Script</b>: the widget's render function. <b>Data</b>: the JSON the widget receives.
+            variables for colors, fonts and sizes. <b>Script</b>: the widget's render function. <b>Data</b>: the JSON the widget receives.{' '}
+            <b>Specs</b>: technical notes for developers.
           </InfoTip>
         </h2>
-        <CodeOutput files={files} />
+        <CodeOutput files={files} specs={widget.specs} />
       </div>
     </div>
   )

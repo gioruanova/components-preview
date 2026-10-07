@@ -29,7 +29,7 @@ Copy `templates/*.tmpl` (next to this skill), drop `.tmpl`, and replace the plac
 | `styles.ts` | `styles(c) → Sheet`. Every color and size is a var (`$$name`). Use `responsiveType`, `widthVars/Decls` and `customButtonStyles`. Per-viewport values: `responsive(c, key)` + an `at(vp)` rule that mirrors the base selectors exactly (see the template). For text in sized boxes, use fluid type `{ unit: 'cqi' }` + `container-type: inline-size`. Never hard-code tablet/mobile values. |
 | `codegen.ts` | `codegen(c) → { html, script, data }`, live from config via `lines()`. Rendering rules (e.g. "button only with URL") go in helpers shared with Preview. Add `isEmpty` if the widget can be removed. |
 | `codegen.test.ts` | One test per spec rule (§7), plus the empty state, widget ID and key style options (`toCss`/`toScss`). |
-| `index.ts` | `defineWidget({ name, status, order, summary, description, previewHint?, defaults, schema, Preview, styles, codegen, isEmpty? })`. |
+| `index.ts` | `defineWidget({ name, status, order, summary, description, specs, previewHint?, defaults, schema, Preview, styles, codegen, isEmpty? })`. `specs` = developer bullets for the Output code → Specs tab (markup root + key classes, script entry, data contract, rendering / responsive rules, tests + spec file). |
 
 Don't edit `src/tooling/*` or `src/app/*` for one widget. A new field type, if truly needed, is added generically and documented in `docs/reference.md`.
 

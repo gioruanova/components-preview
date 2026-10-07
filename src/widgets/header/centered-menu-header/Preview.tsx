@@ -19,11 +19,13 @@ export function Preview({ config: c }: { config: CenteredHeaderConfig }) {
               <TopContent c={c} p={p} />
               <Ticket p={p} />
             </div>
-            <Burger open={open} toggle={toggle} />
+            {p.nav && <Burger open={open} toggle={toggle} />}
           </div>
-          <div className="bottom-header">
-            <Nav open={open} />
-          </div>
+          {p.nav && (
+            <div className="bottom-header">
+              <Nav open={open} />
+            </div>
+          )}
         </span>
       </header>
       <Spacer c={c} height={spacer} />

@@ -21,9 +21,10 @@ export function isExternalUrl(url: string, base = currentOrigin()): boolean {
 /**
  * Port of the platform's `updateLinksAttributes`: external links open in a new tab
  * with `rel="noopener noreferrer"` and an accessible label.
+ * `newTab` forces the same for any link (an explicit "Open in a new tab" option).
  */
-export function linkAttributes(url: string, label: string) {
-  return isExternalUrl(url)
+export function linkAttributes(url: string, label: string, newTab = false) {
+  return newTab || isExternalUrl(url)
     ? { target: '_blank', rel: 'noopener noreferrer', 'aria-label': `${label} (opens in a new tab)` }
     : {}
 }

@@ -12,8 +12,8 @@ export function Preview({ config: c }: { config: HeaderConfig }) {
           <Countdown p={p} />
           <TopContent c={c} p={p} />
           <Ticket p={p} />
-          <Burger open={open} toggle={toggle} />
-          <Nav open={open} />
+          {p.nav && <Burger open={open} toggle={toggle} />}
+          {p.nav && <Nav open={open} />}
         </span>
       </header>
       <Spacer c={c} height={spacer} />

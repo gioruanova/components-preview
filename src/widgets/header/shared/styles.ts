@@ -21,9 +21,11 @@ export type HeaderLook = {
  * in its own bar below (centered). Ticket next to the burger: one row (+ menu) + countdown at the very bottom.
  * Ticket above the burger: the countdown lines up with the burger.
  */
-export function collapsedAreas(c: HeaderBaseConfig, p: HeaderParts, withNav: boolean): Decls {
+export function collapsedAreas(c: HeaderBaseConfig, p: HeaderParts, navRow: boolean): Decls {
   const countdown = p.countdown && c.countdownMobile
-  if (p.ticket && c.mobileTicket === 'above') {
+  const withNav = navRow && p.nav
+  // no navigation = no burger: "above the burger" falls back to one row
+  if (p.ticket && p.nav && c.mobileTicket === 'above') {
     // the ticket spans two columns and the burger only the last one, so the countdown can use the space left of the burger
     const rows = [
       ['logo', 'top', 'ticket', 'ticket'],
@@ -32,7 +34,7 @@ export function collapsedAreas(c: HeaderBaseConfig, p: HeaderParts, withNav: boo
     ]
     return { 'grid-template-columns': 'auto 1fr auto auto', 'grid-template-areas': quote(rows) }
   }
-  const cols = ['logo', 'top', ...(p.ticket ? ['ticket'] : []), 'burger']
+  const cols = ['logo', 'top', ...(p.ticket ? ['ticket'] : []), ...(p.nav ? ['burger'] : [])]
   const rows = [cols, ...(withNav ? [cols.map(() => 'nav')] : []), ...(countdown ? [cols.map(() => 'countdown')] : [])]
   return { 'grid-template-columns': cols.map((a) => (a === 'top' ? '1fr' : 'auto')).join(' '), 'grid-template-areas': quote(rows) }
 }
@@ -54,9 +56,13 @@ export function headerElementStyles(c: HeaderBaseConfig, look: HeaderLook) {
 
   const vars: SheetVar[] = [
     { name: 'header-bg', value: c.headerBackground, group: 'Colors' },
-    { name: 'header-burger-color', value: c.burgerColor, group: 'Colors' },
-    { name: 'header-nav-color', value: look.nav.color, group: 'Colors' },
-    { name: 'header-nav-hover-color', value: look.nav.hoverColor, group: 'Colors' },
+    ...(p.nav
+      ? [
+          { name: 'header-burger-color', value: c.burgerColor, group: 'Colors' as const },
+          { name: 'header-nav-color', value: look.nav.color, group: 'Colors' as const },
+          { name: 'header-nav-hover-color', value: look.nav.hoverColor, group: 'Colors' as const },
+        ]
+      : []),
     ...(p.ticket
       ? [
           { name: 'header-ticket-default-bg', value: look.ticket.background, group: 'Colors' as const },
@@ -250,39 +256,43 @@ export function headerElementStyles(c: HeaderBaseConfig, look: HeaderLook) {
           ...(ticket.rule ? [ticket.rule] : []),
         ]
       : []),
-    // burger: hidden on desktop, always shown (at the right edge) in the collapsed header
-    {
-      sel: '.mobile-nav-toggle',
-      decls: {
-        'grid-area': 'burger',
-        display: 'none',
-        'place-items': 'center',
-        'justify-self': 'end',
-        width: '40px',
-        height: '40px',
-        color: '$$header-burger-color',
-        cursor: 'pointer',
-      },
-    },
-    { sel: '.mobile-nav-toggle .header-icon', decls: { width: '28px', height: '28px' } },
-    { sel: '.nav.is-open', decls: { display: 'flex' } },
-    { sel: '.groups', decls: { display: 'flex', 'flex-wrap': 'wrap', margin: 0, padding: 0, 'list-style': 'none' } },
-    {
-      sel: '.group a',
-      decls: {
-        display: 'block',
-        padding: look.nav.padding,
-        color: '$$header-nav-color',
-        'font-family': 'Poppins, sans-serif',
-        'font-size': '14px',
-        'font-weight': 700,
-        'line-height': 1.5,
-        'text-transform': look.nav.transform,
-        'text-decoration': 'none',
-        transition: 'color 0.3s',
-      },
-    },
-    { sel: '.group a:hover, .group a:focus-visible', decls: { color: '$$header-nav-hover-color' } },
+    // burger: hidden on desktop, always shown (at the right edge) in the collapsed header — only with the navigation
+    ...(p.nav
+      ? [
+          {
+            sel: '.mobile-nav-toggle',
+            decls: {
+              'grid-area': 'burger',
+              display: 'none',
+              'place-items': 'center',
+              'justify-self': 'end',
+              width: '40px',
+              height: '40px',
+              color: '$$header-burger-color',
+              cursor: 'pointer',
+            },
+          },
+          { sel: '.mobile-nav-toggle .header-icon', decls: { width: '28px', height: '28px' } },
+          { sel: '.nav.is-open', decls: { display: 'flex' } },
+          { sel: '.groups', decls: { display: 'flex', 'flex-wrap': 'wrap', margin: 0, padding: 0, 'list-style': 'none' } },
+          {
+            sel: '.group a',
+            decls: {
+              display: 'block',
+              padding: look.nav.padding,
+              color: '$$header-nav-color',
+              'font-family': 'Poppins, sans-serif',
+              'font-size': '14px',
+              'font-weight': 700,
+              'line-height': 1.5,
+              'text-transform': look.nav.transform,
+              'text-decoration': 'none',
+              transition: 'color 0.3s',
+            },
+          },
+          { sel: '.group a:hover, .group a:focus-visible', decls: { color: '$$header-nav-hover-color' } },
+        ]
+      : []),
   ]
 
   /** Mobile overrides of the elements (no tablet step: mobile values are compared with desktop). */
@@ -309,12 +319,16 @@ export function headerElementStyles(c: HeaderBaseConfig, look: HeaderLook) {
     ...(p.weather ? [{ sel: '.header-weather', decls: { ...vis(c.showWeather, c.weatherMobile, 'inline-flex'), ...weather[vp].decls } }] : []),
     ...(p.hours ? [{ sel: '.header-hours', decls: { ...vis(c.showHours, c.hoursMobile, 'inline-flex'), ...hours[vp].decls } }] : []),
     ...(p.cart ? [{ sel: '.viewcart', decls: vis(c.showCart, c.cartMobile, 'flex') }, { sel: '.cartMenuLink', decls: { ...cart[vp].decls } }] : []),
-    // Burger (always on mobile): the menu is hidden until opened (.is-open), then listed vertically
-    { sel: '.mobile-nav-toggle', decls: { display: 'grid' } },
-    { sel: '.nav', decls: { display: 'none' } },
-    { sel: '.nav.is-open', decls: { display: 'block' } },
-    { sel: '.groups', decls: { 'flex-direction': 'column' } },
-    { sel: '.group a', decls: { padding: '12px 0' } },
+    // Burger (always on mobile with the navigation): the menu is hidden until opened (.is-open), then listed vertically
+    ...(p.nav
+      ? [
+          { sel: '.mobile-nav-toggle', decls: { display: 'grid' } },
+          { sel: '.nav', decls: { display: 'none' } },
+          { sel: '.nav.is-open', decls: { display: 'block' } },
+          { sel: '.groups', decls: { 'flex-direction': 'column' } },
+          { sel: '.group a', decls: { padding: '12px 0' } },
+        ]
+      : []),
   ]
 
   return { p, vars, root, elements, mobile }

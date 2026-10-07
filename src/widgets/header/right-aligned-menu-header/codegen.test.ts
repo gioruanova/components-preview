@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { toCss, toScss } from '@/tooling/stylesheet'
 import { codegen, headerParts, toHtml } from './codegen'
-import { COUNTDOWN_SOURCE, defaults, TICKET_URL, type HeaderConfig } from './schema'
+import { COUNTDOWN_SOURCE, defaults, ORGANIZATION_SOURCE, TICKET_URL, type HeaderConfig } from './schema'
 import { styles } from './styles'
 
 /** Defaults show only logo, search, cart and ticket: most rules are tested with the countdown and hours on too. */
@@ -34,11 +34,27 @@ describe('header markup', () => {
     expect(headerParts(cfg({ showLogin: true })).login).toEqual({ label: 'Login', url: '/account/login' })
   })
 
-  it('the ticket button only needs a label and always links to the default ticket page', () => {
-    expect(headerParts(full).ticket).toEqual({ label: 'Buy Tickets', url: TICKET_URL })
-    expect(toHtml(full)).toContain(`href="${TICKET_URL}"`)
+  it('the ticket button links to the default ticket page by default (only needs a label)', () => {
+    expect(headerParts(full).ticket).toEqual({ label: 'Buy Tickets', url: TICKET_URL, custom: false, newTab: false })
+    expect(toHtml(full)).toContain(`<a class="button alternative-btn" href="${TICKET_URL}"><span`)
     expect(headerParts(cfg({ ticketLabel: '' })).ticket).toBeNull()
     expect(toHtml(cfg({ ticketLabel: '' }))).not.toContain('customTicketButton')
+    // the custom URL is ignored while "Use custom URL" is off
+    expect(headerParts(cfg({ ticketUrl: '/p/other' })).ticket?.url).toBe(TICKET_URL)
+  })
+
+  it('custom ticket URL: renders only with a label and a URL; new tab is opt-in', () => {
+    const custom = cfg({ ticketCustomUrl: true, ticketUrl: ' /p/season-passes ' })
+    expect(headerParts(custom).ticket).toEqual({ label: 'Buy Tickets', url: '/p/season-passes', custom: true, newTab: false })
+    expect(toHtml(custom)).toContain('<a class="button alternative-btn" href="${TicketURL}"><span')
+    expect(headerParts(cfg({ ticketCustomUrl: true, ticketUrl: ' ' })).ticket).toBeNull()
+    expect(toHtml(cfg({ ticketCustomUrl: true, ticketUrl: '' }))).not.toContain('customTicketButton')
+    // no ticket → no ticket column, also in the collapsed grid
+    expect(tablet(css({ ticketCustomUrl: true, ticketUrl: '', mobileTicket: 'above' }))).toContain("'logo top burger' 'nav nav nav'")
+    // open in a new tab: target + rel + accessible label (only with a custom URL)
+    const newTab = toHtml({ ...custom, ticketNewTab: true })
+    expect(newTab).toContain('href="${TicketURL}" target="_blank" rel="noopener noreferrer" aria-label="${TicketLabel} (opens in a new tab)">')
+    expect(toHtml(cfg({ ticketNewTab: true }))).not.toContain('target="_blank"')
   })
 
   it('countdown: two lines from Site settings (not widget content) and an optional plain-color icon', () => {
@@ -66,6 +82,29 @@ describe('header markup', () => {
     expect(toHtml(full)).toContain('mobile-nav-toggle')
   })
 
+  it('navigation off: no menu, no burger, no burger script; the ticket stays in the top row', () => {
+    const off = cfg({ showNav: false, ticketPlacement: 'nav', mobileTicket: 'above' })
+    expect(toHtml(full)).toMatch(/mobile-nav-toggle[\s\S]*id="mainNavigation"/)
+    expect(toHtml(off)).not.toMatch(/mobile-nav-toggle|mainNavigation/)
+    expect(codegen(off).script).not.toContain('mobile-nav-toggle')
+    expect(codegen(full).script).toContain('mobile-nav-toggle')
+    expect(rule(css({ showNav: false, ticketPlacement: 'nav' }), '.headerInnerContent')).toContain("grid-template-areas: 'logo countdown top ticket';")
+    // collapsed: no burger column, "above the burger" falls back to one row
+    expect(tablet(css({ showNav: false, mobileTicket: 'above' }))).toContain("grid-template-areas: 'logo top ticket' 'countdown countdown countdown';")
+    expect(css({ showNav: false })).not.toMatch(/mobile-nav-toggle|\.nav|\.group|--header-burger-color/)
+    expect((codegen(off).data as { Navigation: boolean }).Navigation).toBe(false)
+  })
+
+  it('search: the input placeholder is separate from the search word; the organization name is not edited here', () => {
+    const html = toHtml(cfg({ showSearchWord: true, searchLabel: 'Find', searchPlaceholder: 'Search events…' }))
+    expect(html).toContain('placeholder="${SearchPlaceholder}" aria-label="${SearchPlaceholder}"')
+    expect(html).toContain('<span class="searchBoxLabel">${SearchLabel}</span>')
+    expect((codegen(cfg({ searchPlaceholder: 'Search events…' })).data as { Search: { Placeholder: string } }).Search.Placeholder).toBe('Search events…')
+    expect('organizationName' in full).toBe(false)
+    expect(toHtml(full)).toContain('alt="${OrganizationName}"')
+    expect((codegen(full).data as { OrganizationName: { Source: string } }).OrganizationName.Source).toBe(ORGANIZATION_SOURCE)
+  })
+
   it('outputs data with asset paths and the widget ID in the script', () => {
     const { data, script } = codegen(cfg({ widgetId: 'siteHeader' }))
     const d = data as { Logo: string; Countdown: { Icon: string; Source: string }; TicketButton: { URL: string } }
@@ -73,6 +112,8 @@ describe('header markup', () => {
     expect(d.Logo).toBe('/assets/logo/saffire-logo-blue.png')
     expect(d.Countdown.Icon).toBe('/assets/icons/calendar.svg')
     expect(d.TicketButton.URL).toBe(TICKET_URL)
+    const custom = codegen(cfg({ ticketCustomUrl: true, ticketUrl: 'https://tickets.example.com', ticketNewTab: true })).data as { TicketButton: object }
+    expect(custom.TicketButton).toMatchObject({ URL: 'https://tickets.example.com', CustomURL: true, NewTab: true })
     expect(script).toContain("const widgetName = 'siteHeader'")
     expect(toHtml(cfg({ widgetId: 'siteHeader' }))).toContain('id="siteHeader"')
   })

@@ -15,7 +15,7 @@ export function styles(c: CenteredHeaderConfig): Sheet {
   return {
     scope: root,
     title: 'Header',
-    vars: [...shared.vars, { name: 'header-nav-bg', value: c.navBackground, group: 'Colors' }],
+    vars: [...shared.vars, ...(shared.p.nav ? [{ name: 'header-nav-bg', value: c.navBackground, group: 'Colors' as const }] : [])],
     rules: [
       {
         sel: root,
@@ -39,10 +39,10 @@ export function styles(c: CenteredHeaderConfig): Sheet {
           { sel: '.top-header-left', decls: zone('flex-start') },
           { sel: '.top-header-center', decls: zone('center') },
           { sel: '.top-header-right', decls: zone('flex-end') },
-          // full-width menu bar
-          { sel: '.bottom-header', decls: { 'background-color': '$$header-nav-bg' } },
+          // full-width menu bar (only with the navigation)
+          ...(shared.p.nav ? [{ sel: '.bottom-header', decls: { 'background-color': '$$header-nav-bg' } }] : []),
           ...shared.elements,
-          { sel: '.nav', decls: { display: 'flex', 'justify-content': 'center', ...widthDecls(c, 'header-max-width'), margin: '0 auto' } },
+          ...(shared.p.nav ? [{ sel: '.nav', decls: { display: 'flex', 'justify-content': 'center', ...widthDecls(c, 'header-max-width'), margin: '0 auto' } }] : []),
         ],
       },
       // collapsed header (own breakpoint, no tablet step): the zones dissolve (display: contents) into one grid
@@ -56,7 +56,7 @@ export function styles(c: CenteredHeaderConfig): Sheet {
               { sel: '.top-header-left', decls: { display: 'contents' } },
               { sel: '.top-header-center', decls: { display: 'contents' } },
               { sel: '.top-header-right', decls: { display: 'contents' } },
-              { sel: '.bottom-header', decls: { padding: '0 15px' } },
+              ...(shared.p.nav ? [{ sel: '.bottom-header', decls: { padding: '0 15px' } }] : []),
               ...shared.mobile,
             ],
           },

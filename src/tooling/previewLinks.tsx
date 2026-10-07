@@ -4,13 +4,14 @@ import { isExternalUrl } from './codegen'
 
 /**
  * Click handler for links inside previews: never navigates. Shows a centered notification with confetti:
- * same domain → "Navigating to section"; other domain → "Opening external URL in a new tab".
+ * same domain → "Navigating to section" (or "Opening in a new tab" when `newTab`); other domain → "Opening external URL in a new tab".
  */
-export function previewLinkClick(url: string) {
+export function previewLinkClick(url: string, newTab = false) {
   return (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (isExternalUrl(url)) notifyCenter('external', 'Opening external URL in a new tab', url)
+    else if (newTab) notifyCenter('external', 'Opening in a new tab', url)
     else notifyCenter('internal', 'Navigating to section', url)
   }
 }

@@ -1,5 +1,5 @@
 import { outputPath } from '@/tooling/assets'
-import { COUNTDOWN_SOURCE, shown, TICKET_URL, type HeaderBaseConfig } from './config'
+import { COUNTDOWN_SOURCE, hasTicket, ORGANIZATION_SOURCE, shown, ticketHref, type HeaderBaseConfig } from './config'
 
 /** The site's main menu comes from the CMS: fixed sample items here (no options). */
 export const NAV_ITEMS = [
@@ -9,8 +9,8 @@ export const NAV_ITEMS = [
   { label: 'Facilities', url: '/p/rentals' },
 ] as const
 
-/** Dynamic values filled by the platform (countdown text: Site settings → Countdown); the preview shows these samples. */
-export const SAMPLE = { temperature: '72°F', cartCount: 0, countdownDate: 'Dec 1 – Mar 1, 2027', countdownEvent: 'Your Amazing Event' }
+/** Dynamic values filled by the platform (organization name, countdown text: Site settings); the preview shows these samples. */
+export const SAMPLE = { organizationName: 'Your Organization Name Here', temperature: '72°F', cartCount: 0, countdownDate: 'Dec 1 – Mar 1, 2027', countdownEvent: 'Only 120 Days Until Your Amazing Event' }
 
 const link = (show: boolean, label: string, url: string) => (show && label.trim() && url.trim() ? { label, url } : null)
 
@@ -28,7 +28,8 @@ export function headerParts(c: HeaderBaseConfig) {
     weather: shown(c, 'showWeather', 'weatherMobile'),
     hours: link(shown(c, 'showHours', 'hoursMobile'), c.hoursLabel, c.hoursUrl),
     cart: shown(c, 'showCart', 'cartMobile'),
-    ticket: c.ticketLabel.trim() ? { label: c.ticketLabel, url: TICKET_URL } : null,
+    nav: c.showNav,
+    ticket: hasTicket(c) ? { label: c.ticketLabel, url: ticketHref(c), custom: c.ticketCustomUrl, newTab: c.ticketCustomUrl && c.ticketNewTab } : null,
   }
 }
 export type HeaderParts = ReturnType<typeof headerParts>
@@ -47,6 +48,7 @@ export const ICONS = {
 
 const indent = (n: number, rows: (string | false | null | undefined)[]) => rows.filter((r): r is string => typeof r === 'string').map((r) => ' '.repeat(n) + r)
 
+/** The alt text `${OrganizationName}` is filled by the platform (Site settings → Organization name). */
 export const logoHtml = (n: number) => indent(n, ['<a href="/" class="header-logo"><img src="${Logo}" alt="${OrganizationName}" /></a>'])
 
 export const countdownHtml = (p: HeaderParts, n: number) =>
@@ -69,7 +71,7 @@ export const topContentHtml = (c: HeaderBaseConfig, p: HeaderParts, n: number) =
     '<div class="top-content">',
     p.search && `  <div class="searchBox search-${c.searchMode}">`,
     p.search && `    <button class="searchBoxClicker" type="button" aria-label="\${SearchLabel}">${ICONS.search}</button>`,
-    p.search && '    <div class="searchBoxInput"><input type="text" placeholder="${SearchLabel}" aria-label="${SearchLabel}" /></div>',
+    p.search && '    <div class="searchBoxInput"><input type="text" placeholder="${SearchPlaceholder}" aria-label="${SearchPlaceholder}" /></div>',
     p.search && c.showSearchWord && '    <span class="searchBoxLabel">${SearchLabel}</span>',
     p.search && '  </div>',
     p.login && `  <a class="header-login" href="\${LoginURL}">${ICONS.user}<span>\${LoginLabel}</span></a>`,
@@ -79,16 +81,21 @@ export const topContentHtml = (c: HeaderBaseConfig, p: HeaderParts, n: number) =
     '</div>',
   ])
 
-export const ticketHtml = (p: HeaderParts, n: number) =>
-  p.ticket
-    ? indent(n, ['<div id="customTicketButton">', `  <a class="button alternative-btn" href="${p.ticket.url}"><span class="btn-label">\${TicketLabel}</span></a>`, '</div>'])
-    : []
+/** Default page = fixed href; custom URL = `${TicketURL}`. "Open in a new tab" adds target / rel / accessible label. */
+export const ticketHtml = (p: HeaderParts, n: number) => {
+  if (!p.ticket) return []
+  const href = p.ticket.custom ? '${TicketURL}' : p.ticket.url
+  const newTab = p.ticket.newTab ? ' target="_blank" rel="noopener noreferrer" aria-label="${TicketLabel} (opens in a new tab)"' : ''
+  return indent(n, ['<div id="customTicketButton">', `  <a class="button alternative-btn" href="${href}"${newTab}><span class="btn-label">\${TicketLabel}</span></a>`, '</div>'])
+}
 
-export const burgerHtml = (n: number) =>
-  indent(n, [`<div class="mobile-nav-toggle" role="button" tabindex="0" aria-label="Toggle mobile menu" aria-expanded="false">${ICONS.burger}</div>`])
+export const burgerHtml = (p: HeaderParts, n: number) =>
+  !p.nav ? [] : indent(n, [`<div class="mobile-nav-toggle" role="button" tabindex="0" aria-label="Toggle mobile menu" aria-expanded="false">${ICONS.burger}</div>`])
 
-export const navHtml = (n: number) =>
-  indent(n, [
+export const navHtml = (p: HeaderParts, n: number) =>
+  !p.nav
+    ? []
+    : indent(n, [
     '<nav class="nav" id="mainNavigation">',
     '  <ul class="groups">',
     '    <!-- one li.group per menu item (from the CMS) -->',
@@ -107,26 +114,28 @@ export function baseData(c: HeaderBaseConfig) {
   const p = headerParts(c)
   return {
     Logo: (c.logo && outputPath(c.logo)) || null,
-    OrganizationName: c.organizationName,
+    // the logo's alt text comes from the site settings, not from this widget
+    OrganizationName: { Source: ORGANIZATION_SOURCE },
     // date + event name come from the site settings, not from this widget
     Countdown: p.countdown ? { Source: COUNTDOWN_SOURCE, Icon: (p.countdownIcon && outputPath(p.countdownIcon)) || null } : null,
-    Search: p.search ? { Label: c.searchLabel, ShowLabel: c.showSearchWord, Mode: c.searchMode } : null,
+    Search: p.search ? { Label: c.searchLabel, ShowLabel: c.showSearchWord, Placeholder: c.searchPlaceholder, Mode: c.searchMode } : null,
     Login: p.login && { Label: p.login.label, URL: p.login.url },
     Weather: p.weather,
     HoursDirections: p.hours && { Label: p.hours.label, URL: p.hours.url, ShowIcon: c.showHoursIcon },
     Cart: p.cart,
-    TicketButton: p.ticket && { Label: p.ticket.label, URL: p.ticket.url, MobilePlacement: c.mobileTicket },
+    TicketButton: p.ticket && { Label: p.ticket.label, URL: p.ticket.url, CustomURL: p.ticket.custom, NewTab: p.ticket.newTab, MobilePlacement: c.mobileTicket },
+    Navigation: p.nav,
     Fixed: c.fixed,
   }
 }
 
-/** Burger toggle, fixed-header spacer and search submit — the same for every header. */
+/** Burger toggle (with the navigation), fixed-header spacer and search submit — the same for every header. */
 export function headerScript(c: HeaderBaseConfig) {
   return `function createCustomHeader(widgetData) {
   const widgetName = '${c.widgetId}';
   const $header = $(\`#\${widgetName}\`);
 
-  // Mobile menu: the burger opens / closes the navigation
+${c.showNav ? `  // Mobile menu: the burger opens / closes the navigation
   $header.find('.mobile-nav-toggle').on('click keydown', function (e) {
     if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
     e.preventDefault();
@@ -134,7 +143,7 @@ export function headerScript(c: HeaderBaseConfig) {
     $(this).attr('aria-expanded', open);
   });
 
-${c.fixed ? `  // Fixed header: the spacer after it always matches its height (it changes with the viewport / open menu)
+` : ''}${c.fixed ? `  // Fixed header: the spacer after it always matches its height (it changes with the viewport / open menu)
   const $spacer = $header.next('.header-spacer');
   const sync = () => $spacer.height($header.outerHeight());
   new ResizeObserver(sync).observe($header[0]);

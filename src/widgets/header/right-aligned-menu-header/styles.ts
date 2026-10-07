@@ -10,7 +10,8 @@ export function styles(c: HeaderConfig): Sheet {
     ticket: { background: 'linear-gradient(183deg, #ffa700 45%, #f26922 75%)', hoverBackground: '#f26922', radius: '5px', padding: '14px 18px' },
     nav: { color: '#313841', hoverColor: '#0079c2', transform: 'capitalize', padding: '9px 20px' },
   })
-  const ticketTop = c.ticketPlacement === 'top'
+  // without navigation there is no second row: the ticket always sits in the top row
+  const ticketTop = c.ticketPlacement === 'top' || !p.nav
 
   /**
    * Desktop grid: the logo spans both rows; countdown, top container and ticket share the top row; the menu fills the
@@ -35,7 +36,7 @@ export function styles(c: HeaderConfig): Sheet {
               'box-sizing': 'border-box',
               display: 'grid',
               'grid-template-columns': cols.map((a) => (a === 'top' ? '1fr' : 'auto')).join(' '),
-              'grid-template-areas': quote([row1, row2]),
+              'grid-template-areas': quote(p.nav ? [row1, row2] : [row1]),
               'align-items': 'center',
               gap: '6px 20px',
               ...widthDecls(c, 'header-max-width'),
@@ -44,7 +45,7 @@ export function styles(c: HeaderConfig): Sheet {
             },
           },
           ...elements,
-          { sel: '.nav', decls: { 'grid-area': 'nav', display: 'flex', 'justify-content': 'flex-end' } },
+          ...(p.nav ? [{ sel: '.nav', decls: { 'grid-area': 'nav', display: 'flex', 'justify-content': 'flex-end' } }] : []),
         ],
       },
       // collapsed header (own breakpoint, no tablet step); same nesting as the base rules

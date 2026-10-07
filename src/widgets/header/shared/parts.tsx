@@ -13,8 +13,8 @@ export function Icon({ svg }: { svg: string }) {
   return <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: inner }} />
 }
 
-export const Link = ({ url, label, className, children }: { url: string; label: string; className?: string; children: ReactNode }) => (
-  <a href={url} className={className} onClick={previewLinkClick(url)} {...linkAttributes(url, label)}>
+export const Link = ({ url, label, className, newTab, children }: { url: string; label: string; className?: string; newTab?: boolean; children: ReactNode }) => (
+  <a href={url} className={className} onClick={previewLinkClick(url, newTab)} {...linkAttributes(url, label, newTab)}>
     {children}
   </a>
 )
@@ -40,8 +40,9 @@ export function useHeader(c: HeaderBaseConfig) {
 export function Logo({ c }: { c: HeaderBaseConfig }) {
   const logo = previewUrl(c.logo)
   return (
-    <Link url="/" label={c.organizationName} className="header-logo">
-      {logo && <img src={logo} alt={c.organizationName} />}
+    // alt text: Site settings → Organization name (sample here)
+    <Link url="/" label={SAMPLE.organizationName} className="header-logo">
+      {logo && <img src={logo} alt={SAMPLE.organizationName} />}
     </Link>
   )
 }
@@ -76,7 +77,7 @@ export function TopContent({ c, p }: { c: HeaderBaseConfig; p: HeaderParts }) {
             <Icon svg={ICONS.search} />
           </button>
           <div className="searchBoxInput">
-            <input type="text" placeholder={c.searchLabel} aria-label={c.searchLabel} />
+            <input type="text" placeholder={c.searchPlaceholder} aria-label={c.searchPlaceholder} />
           </div>
           {c.showSearchWord && <span className="searchBoxLabel">{c.searchLabel}</span>}
         </div>
@@ -115,7 +116,7 @@ export function Ticket({ p }: { p: HeaderParts }) {
   if (!p.ticket) return null
   return (
     <div id="customTicketButton">
-      <Link url={p.ticket.url} label={p.ticket.label} className="button alternative-btn">
+      <Link url={p.ticket.url} label={p.ticket.label} newTab={p.ticket.newTab} className="button alternative-btn">
         <span className="btn-label">{p.ticket.label}</span>
       </Link>
     </div>

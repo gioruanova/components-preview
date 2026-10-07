@@ -13,11 +13,14 @@ import {
   fixedField,
   headerStyleGroup,
   mobileTicketField,
+  navField,
+  navShown,
   text,
+  ticketFields,
   type HeaderBaseConfig,
 } from '../shared/config'
 
-export { COUNTDOWN_SOURCE, TICKET_URL } from '../shared/config'
+export { COUNTDOWN_SOURCE, ORGANIZATION_SOURCE, TICKET_URL } from '../shared/config'
 
 export type CenteredHeaderConfig = HeaderBaseConfig & {
   /** The full-width menu bar under the top row. */
@@ -70,11 +73,12 @@ export const schema: Schema<CenteredHeaderConfig> = {
   widget: [
     { type: 'text', key: 'widgetId', label: 'Widget ID' },
     ...as<CenteredHeaderConfig>(fixedField),
+    ...as<CenteredHeaderConfig>(navField),
     ...as<CenteredHeaderConfig>(elementBoxes('Left of the logo')),
     {
       type: 'group',
       label: 'Ticket button',
-      fields: [...asLeaf<CenteredHeaderConfig>(mobileTicketField)],
+      fields: asLeaf<CenteredHeaderConfig>([...ticketFields, mobileTicketField]),
     },
   ],
   styles: [
@@ -83,6 +87,7 @@ export const schema: Schema<CenteredHeaderConfig> = {
     {
       type: 'group',
       label: 'Navigation bar',
+      visibleWhen: navShown,
       fields: [
         { type: 'color', key: 'navBackground', label: 'Bar background', help: 'Full-width bar under the top row' },
         { type: 'color', key: 'navColor', label: 'Link color', solid: true },

@@ -8,8 +8,11 @@ import type { Config, FieldDef, GroupField, LeafField } from '@/tooling/types'
  * Each header adds its own layout options and decides where the elements go.
  */
 
-/** The ticket button always links to the site's default ticket page (not editable). */
+/** The ticket button links to the site's default ticket page, unless "Use custom URL" is on. */
 export const TICKET_URL = '/p/tickets--deals'
+
+/** Where the logo's alternative text comes from (not edited in the header). */
+export const ORGANIZATION_SOURCE = 'Site settings → Organization name'
 
 /** Where the countdown text comes from (not edited in the header). */
 export const COUNTDOWN_SOURCE = 'Site settings → Countdown'
@@ -18,22 +21,32 @@ export type HeaderBaseConfig = WidthConfig & {
   widgetId: string
   // A · Content (client edits)
   logo: string
-  organizationName: string
-  searchLabel: string
   loginLabel: string
   loginUrl: string
   hoursLabel: string
   hoursUrl: string
   ticketLabel: string
+  /** Off = the ticket links to TICKET_URL; on = to `ticketUrl`. */
+  ticketCustomUrl: boolean
+  /** Only used when `ticketCustomUrl` is on. */
+  ticketUrl: string
+  /** Custom URL only: always open in a new tab (external URLs already do). */
+  ticketNewTab: boolean
   // B · Widget configuration — every element has independent desktop / mobile visibility
   /** fixed = `position: fixed` (the platform needs fixed, not sticky) + a spacer so content starts below it. */
   fixed: boolean
+  /** The CMS menu and its mobile toggle (burger). Off = neither is rendered. */
+  showNav: boolean
   showCountdown: boolean
   countdownMobile: boolean
   showCountdownIcon: boolean
   showSearch: boolean
   searchMobile: boolean
   showSearchWord: boolean
+  /** The search word next to the icon (also the icon button's accessible label). Edited when "Show the search word" is on. */
+  searchLabel: string
+  /** Placeholder (and accessible label) of the search input. */
+  searchPlaceholder: string
   /** closed = icon only, the input opens on hover / focus; open = input always visible. */
   searchMode: 'closed' | 'open'
   showLogin: boolean
@@ -79,6 +92,11 @@ export type HeaderBaseConfig = WidthConfig & {
 
 export const text = (o: Partial<Typography>) => typography({ size: 14, weight: 600, lineHeight: 1.3, color: '#313841', ...o })
 
+/** Where the ticket button links: the default ticket page, or the custom URL ('' = none). */
+export const ticketHref = (c: HeaderBaseConfig) => (c.ticketCustomUrl ? c.ticketUrl.trim() : TICKET_URL)
+/** The ticket button renders with a label and a URL (always true for the default page). */
+export const hasTicket = (c: HeaderBaseConfig) => Boolean(c.ticketLabel.trim() && ticketHref(c))
+
 /** Visible on desktop or on mobile (the element is in the markup; CSS hides it where it's off). */
 export const shown = (c: HeaderBaseConfig, desktop: keyof HeaderBaseConfig, mobile: keyof HeaderBaseConfig) => Boolean(c[desktop] || c[mobile])
 
@@ -86,20 +104,24 @@ export const shown = (c: HeaderBaseConfig, desktop: keyof HeaderBaseConfig, mobi
 export const baseDefaults: HeaderBaseConfig = {
   widgetId: 'customHeader',
   logo: 'logo:saffire',
-  organizationName: 'Your Organization Name Here',
-  searchLabel: 'Search',
   loginLabel: 'Login',
   loginUrl: '/account/login',
   hoursLabel: 'Hours & Directions',
   hoursUrl: '/p/hours--directions',
   ticketLabel: 'Buy Tickets',
+  ticketCustomUrl: false,
+  ticketUrl: '',
+  ticketNewTab: false,
   fixed: true,
+  showNav: true,
   showCountdown: false,
   countdownMobile: false,
   showCountdownIcon: true,
   showSearch: true,
   searchMobile: false,
   showSearchWord: false,
+  searchLabel: 'Search',
+  searchPlaceholder: 'Search Website',
   searchMode: 'closed',
   showLogin: false,
   loginMobile: false,
@@ -164,31 +186,16 @@ const LINK_TIP = 'The link renders only when it is shown and has both a label an
 
 export const contentFields: F[] = [
   {
-    type: 'group',
+    type: 'image',
+    key: 'logo',
     label: 'Logo',
-    fields: [
-      { type: 'image', key: 'logo', label: 'Logo', library: 'logo', tip: 'PNG or JPG. PNG keeps transparency.' },
-      { type: 'text', key: 'organizationName', label: 'Organization name', tip: 'Used as the logo’s alternative text.' },
-    ],
-  },
-  {
-    type: 'text',
-    key: 'searchLabel',
-    label: 'Search label',
-    maxLength: 12,
-    tip: 'Short word (max 12 characters): shown next to the icon and as the input placeholder.',
-    visibleWhen: (c) => shown(c, 'showSearch', 'searchMobile'),
+    library: 'logo',
+    tip: `PNG or JPG. PNG keeps transparency. The alternative text comes from ${ORGANIZATION_SOURCE}.`,
   },
   { type: 'text', key: 'loginLabel', label: 'Login label', tip: LINK_TIP, visibleWhen: (c) => shown(c, 'showLogin', 'loginMobile') },
   { type: 'text', key: 'loginUrl', label: 'Login URL', tip: LINK_TIP, visibleWhen: (c) => shown(c, 'showLogin', 'loginMobile') },
   { type: 'text', key: 'hoursLabel', label: 'Hours & Directions label', tip: LINK_TIP, visibleWhen: (c) => shown(c, 'showHours', 'hoursMobile') },
   { type: 'text', key: 'hoursUrl', label: 'Hours & Directions URL', tip: LINK_TIP, visibleWhen: (c) => shown(c, 'showHours', 'hoursMobile') },
-  {
-    type: 'text',
-    key: 'ticketLabel',
-    label: 'Ticket button label',
-    tip: `The button always links to the site's default ticket page (${TICKET_URL}). Empty label = no button.`,
-  },
 ]
 
 export const fixedField: F = {
@@ -197,6 +204,20 @@ export const fixedField: F = {
   label: 'Fixed header',
   hint: 'Stays on top while the page scrolls',
   tip: 'Uses position: fixed (our platform needs fixed, not sticky). A spacer right after the header keeps the page content from sliding under it.',
+}
+
+export const navField: F = {
+  type: 'group',
+  label: 'Navigation',
+  fields: [
+    {
+      type: 'switch',
+      key: 'showNav',
+      label: 'Show navigation',
+      hint: 'The menu and its mobile toggle (burger)',
+      tip: 'The menu items come from the CMS. Off: no menu on desktop and no burger on mobile.',
+    },
+  ],
 }
 
 /** Countdown + one box per top element, in their order on the site. `countdownHint`: where it sits on desktop. */
@@ -223,6 +244,14 @@ export const elementBoxes = (countdownHint: string): F[] => [
       ...visibility('showSearch', 'searchMobile'),
       { type: 'switch', key: 'showSearchWord', label: 'Show the search word', visibleWhen: (c) => shown(c, 'showSearch', 'searchMobile') },
       {
+        type: 'text',
+        key: 'searchLabel',
+        label: 'Search word',
+        maxLength: 12,
+        tip: 'Short word (max 12 characters) shown next to the icon.',
+        visibleWhen: (c) => shown(c, 'showSearch', 'searchMobile') && c.showSearchWord,
+      },
+      {
         type: 'segmented',
         key: 'searchMode',
         label: 'Search input',
@@ -232,6 +261,7 @@ export const elementBoxes = (countdownHint: string): F[] => [
           { value: 'open', label: 'Always open' },
         ],
       },
+      { type: 'text', key: 'searchPlaceholder', label: 'Input placeholder', tip: 'Text inside the empty search input (also its accessible label).', visibleWhen: (c) => shown(c, 'showSearch', 'searchMobile') },
     ],
   },
   { type: 'group', label: 'Top container 2 · Login link', fields: visibility('showLogin', 'loginMobile') },
@@ -247,6 +277,26 @@ export const elementBoxes = (countdownHint: string): F[] => [
   { type: 'group', label: 'Top container 5 · Cart', fields: visibility('showCart', 'cartMobile') },
 ]
 
+/** Ticket button (Widget configuration → Ticket button): label, default or custom URL, new tab. */
+export const ticketFields: L[] = [
+  { type: 'text', key: 'ticketLabel', label: 'Label', tip: 'Empty label = no button.' },
+  {
+    type: 'switch',
+    key: 'ticketCustomUrl',
+    label: 'Use custom URL',
+    hint: `Off: links to the default ticket page (${TICKET_URL})`,
+  },
+  { type: 'text', key: 'ticketUrl', label: 'URL', placeholder: 'https://… or /p/…', tip: LINK_TIP, visibleWhen: (c) => c.ticketCustomUrl },
+  {
+    type: 'switch',
+    key: 'ticketNewTab',
+    label: 'Open in a new tab',
+    hint: 'External URLs always open in a new tab',
+    tip: 'Adds target="_blank", rel="noopener noreferrer" and "(opens in a new tab)" to the accessible label.',
+    visibleWhen: (c) => c.ticketCustomUrl,
+  },
+]
+
 export const mobileTicketField: L = {
   type: 'segmented',
   key: 'mobileTicket',
@@ -256,7 +306,7 @@ export const mobileTicketField: L = {
     { value: 'above', label: 'Above burger' },
   ],
   help: 'Above: the ticket sits over the burger and the countdown lines up with the burger.',
-  visibleWhen: (c) => Boolean(c.ticketLabel.trim()),
+  visibleWhen: (c) => hasTicket(c) && c.showNav,
 }
 
 /** Styles → Header (width, breakpoint, background, shadow, logo width). */
@@ -335,6 +385,8 @@ export const elementStyleGroups: F[] = [
 ]
 
 export const burgerField: L = { type: 'color', key: 'burgerColor', label: 'Burger color (mobile)', solid: true }
+/** Menu styles only matter when the navigation is shown. */
+export const navShown = (c: HeaderBaseConfig) => c.showNav
 
 /** Reuse the shared (base-typed) fields in a header's own schema. */
 export const as = <C extends Config>(fields: F | F[]) => (Array.isArray(fields) ? fields : [fields]) as unknown as FieldDef<C>[]

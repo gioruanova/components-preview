@@ -13,7 +13,7 @@
 - Replicates the [startermango.saffire.com](https://startermango.saffire.com/) header: logo left (spanning both rows), a top container on the right, the main menu right-aligned below it.
 - Optional countdown next to the logo, level with the top container (on mobile: at the bottom of the header): two lines (date, event name) and an optional plain-color icon. The countdown text is **not** edited in the widget: it comes from **Site settings → Countdown**.
 - Top container, in this order: search box, login link, weather, hours & directions, cart. Every element (countdown included) has **independent** desktop and mobile visibility (desktop only, mobile only, both or none).
-- Ticket button: label only, always links to the default ticket page. Placement: next to the top container or next to the navigation. Always visible on mobile.
+- Ticket button: links to the default ticket page (label only), or to a custom URL with "Use custom URL" (optionally opening in a new tab). Placement: next to the top container or next to the navigation. Always visible on mobile.
 - Navigation comes from the CMS (no options). Below its own **mobile breakpoint** (Styles, default 768px like mango) the header collapses and the menu moves behind the burger (always present on mobile). Headers have only **desktop and mobile** values (no tablet step; the preview offers Desktop / Mobile only).
 - **Fixed header** option (default on): `position: fixed` — our platform needs fixed, not sticky. A `.header-spacer` right after the header takes its height (kept in sync by the script with a ResizeObserver) so the page content starts below it.
 - On mobile the ticket button sits **next to the burger** or **above it** (then the countdown lines up with the burger).
@@ -59,14 +59,15 @@ White header with `0 0 3px 3px rgba(158,158,158,.31)` shadow; inner max width 12
 ```json
 {
   "Logo": "/assets/logo/placeholder.svg",
-  "OrganizationName": "Your Organization Name Here",
+  "OrganizationName": { "Source": "Site settings → Organization name" },
   "Countdown": { "Source": "Site settings → Countdown", "Icon": "/assets/icons/calendar.svg" },
-  "Search": { "Label": "Search", "ShowLabel": false, "Mode": "closed" },
+  "Search": { "Label": "Search", "ShowLabel": false, "Placeholder": "Search Website", "Mode": "closed" },
   "Login": null,
   "Weather": false,
   "HoursDirections": { "Label": "Hours & Directions", "URL": "/p/hours--directions", "ShowIcon": true },
   "Cart": true,
-  "TicketButton": { "Label": "Buy Tickets", "URL": "/p/tickets--deals", "Placement": "top" }
+  "Navigation": true,
+  "TicketButton": { "Label": "Buy Tickets", "URL": "/p/tickets--deals", "CustomURL": false, "NewTab": false, "MobilePlacement": "beside" }
 }
 ```
 
@@ -74,21 +75,25 @@ White header with `0 0 3px 3px rgba(158,158,158,.31)` shadow; inner max width 12
 | Section | Label | Key | Field type | Default | Options / range | Visible when | Notes |
 |---|---|---|---|---|---|---|---|
 | A | Logo | logo | image (`library: 'logo'`) | Saffire blue logo (`src/assets/saffire-loog-blue.png` → `/assets/logo/saffire-logo-blue.png`) | PNG / JPG uploads | | PNG keeps transparency |
-| A | Organization name | organizationName | text | Your Organization Name Here | | | logo alt text |
-| A | Search label | searchLabel | text (`maxLength: 12`) | Search | | showSearch | word + placeholder |
 | A | Login label / URL | loginLabel / loginUrl | text | Login / /account/login | | showLogin | link tip |
 | A | Hours & Directions label / URL | hoursLabel / hoursUrl | text | Hours & Directions / /p/hours--directions | | showHours | link tip |
-| A | Ticket button label | ticketLabel | text | Buy Tickets | | | URL always `/p/tickets--deals` (note in tip) |
 | B | Widget ID | widgetId | text | `customHeader` | | | |
 | B | Countdown · desktop / · mobile / icon | showCountdown / countdownMobile / showCountdownIcon | switches | on / on / on | | | text from Site settings → Countdown (tip) |
 | B | Search box · desktop / · mobile / word / input | showSearch / searchMobile / showSearchWord / searchMode | switches + segmented | on / off / off / closed | closed (opens on hover) · always open | | desktop and mobile independent |
+| B | Search box · Search word | searchLabel | text (`maxLength: 12`) | Search | | showSearchWord | word next to the icon + icon button label |
+| B | Search box · Input placeholder | searchPlaceholder | text | Search | | showSearch | input placeholder + its accessible label |
 | B | Login link · desktop / · mobile | showLogin / loginMobile | switches | off / off | | | |
 | B | Weather · desktop / · mobile | showWeather / weatherMobile | switches | off / off | | | |
 | B | Hours & Directions · desktop / · mobile / pin icon | showHours / hoursMobile / showHoursIcon | switches | on / off / on | | | |
 | B | Cart · desktop / · mobile | showCart / cartMobile | switches | on / off | | | |
 | B | Fixed header | fixed | switch | on | | | position: fixed + spacer |
-| B | Ticket placement | ticketPlacement | segmented | top | Next to top container · Next to navigation | | critical option |
-| B | Ticket on mobile | mobileTicket | segmented | beside | Next to burger · Above burger | ticket label | above: countdown next to the burger |
+| B | Navigation · Show navigation | showNav | switch | on | | | menu + burger; off = neither rendered |
+| B | Ticket button · Label | ticketLabel | text | Buy Tickets | | | empty = no button |
+| B | Ticket button · Use custom URL | ticketCustomUrl | switch | off | | | off = `/p/tickets--deals` |
+| B | Ticket button · URL | ticketUrl | text | (empty) | | ticketCustomUrl | link tip |
+| B | Ticket button · Open in a new tab | ticketNewTab | switch | off | | ticketCustomUrl | external URLs open in a new tab anyway |
+| B | Ticket placement | ticketPlacement | segmented | top | Next to top container · Next to navigation | showNav | critical option |
+| B | Ticket on mobile | mobileTicket | segmented | beside | Next to burger · Above burger | ticket rendered + showNav | above: countdown next to the burger |
 | C | Header width / background / shadow | widthMode, maxWidth / headerBackground / headerShadow | segmented + slider / color / switch | Max 1200 / #fff / on | | | |
 | C | Mobile breakpoint | breakpoint | slider | 768 | 480–1440 px | | collapse point (one media block) |
 | C | Logo width | logoWidth | slider | 160 | 60–320 px | | responsive · mobile 110 |
@@ -106,13 +111,17 @@ White header with `0 0 3px 3px rgba(158,158,158,.31)` shadow; inner max width 12
 ## 7. Rendering rules
 - Top container items render in the fixed order search → login → weather → hours → cart, each only when shown.
 - Login and Hours & Directions links render only with a label and a URL.
-- The ticket button renders when it has a label; its URL is always `/p/tickets--deals`.
+- Ticket button: "Use custom URL" off → renders with a label, `href="/p/tickets--deals"`. On → renders only with a label **and** a URL, `href="${TicketURL}"`.
+- "Open in a new tab" (custom URL only) adds `target="_blank" rel="noopener noreferrer" aria-label="${TicketLabel} (opens in a new tab)"`. Without it, the shared rule applies: external URLs open in a new tab, same-site URLs don't.
 - An element is in the markup when it's on for desktop **or** mobile; CSS hides it on the viewport where it's off (base `display: none` and/or a tablet override).
 - Countdown: date and event name are two separate lines with their own styles, filled from Site settings → Countdown (`${CountdownDate}`, `${CountdownEventName}`). The icon is a mask painted in `countdownIconColor`; padding only when the icon background isn't transparent.
 - Search: the word renders only when "Show the search word" is on; closed = input width 0, opening on hover / focus; open = input always visible.
 - Hours pin icon optional. The burger is always there on mobile.
 - Ticket placement switches the grid areas: top = `'logo countdown top ticket' 'logo nav nav nav'`; nav = `'logo countdown top top' 'logo nav nav ticket'` (countdown / ticket columns are dropped when not rendered).
 - Collapsed header (`@media (max-width: <breakpoint>px)`), ticket next to the burger: `'logo top ticket burger' 'nav nav nav nav' 'countdown …'` — the countdown sits at the very bottom. Ticket above the burger: `'logo top ticket ticket' 'countdown countdown countdown burger' 'nav nav nav nav'` (without countdown: `'logo top burger burger'`). The burger is always `justify-self: end`. The menu is hidden until `.nav.is-open`, then listed vertically.
+- Show navigation off: no `nav#mainNavigation`, no `.mobile-nav-toggle`, no burger script and no menu / burger CSS. The desktop grid has one row (the ticket stays in the top row whatever the placement); the collapsed grid has no burger column, and "Above burger" falls back to one row.
+- Search: the word (`${SearchLabel}`, also the icon button's label) and the input placeholder (`${SearchPlaceholder}`, also the input's label) are separate.
+- The logo's alt text `${OrganizationName}` comes from Site settings → Organization name (not edited in the header).
 - Fixed: `#header { position: fixed; top: 0; left: 0; z-index: 1000 }` + `<div class="header-spacer">` after it (height = header height via script).
 
 ## 8. Responsive behavior
@@ -126,4 +135,4 @@ n/a — the header is always rendered.
 - Countdown as a real "N days until" counter (now date + event name from Site settings).
 - Real weather / cart data and the CMS menu (samples in the preview).
 - Navigation styles (no options requested yet); the general message banner above the header.
-- Exact ticket page URL per site (`/p/tickets--deals` from mango).
+- Exact default ticket page URL per site (`/p/tickets--deals` from mango; other pages via the custom URL).

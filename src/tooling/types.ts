@@ -120,6 +120,11 @@ export type WidgetDefinition<C extends Config = Config> = {
   summary: string
   /** Functional description bullets. Inline `code` in backticks is rendered as code. */
   description: string[]
+  /**
+   * Developer specs bullets ("Specs" tab of the Output code): markup root and key classes, data contract, script entry,
+   * rendering / responsive rules, extension points. Technical counterpart of `description`; inline `code` is rendered as code.
+   */
+  specs: string[]
   /** Optional hint shown above the live preview. */
   previewHint?: string
   defaults: C

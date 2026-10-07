@@ -11,11 +11,14 @@ import {
   fixedField,
   headerStyleGroup,
   mobileTicketField,
+  navField,
+  navShown,
   text,
+  ticketFields,
   type HeaderBaseConfig,
 } from '../shared/config'
 
-export { COUNTDOWN_SOURCE, TICKET_URL } from '../shared/config'
+export { COUNTDOWN_SOURCE, ORGANIZATION_SOURCE, TICKET_URL } from '../shared/config'
 
 export type HeaderConfig = HeaderBaseConfig & {
   /** Next to the top container (top row) or next to the navigation (second row). */
@@ -37,11 +40,13 @@ export const schema: Schema<HeaderConfig> = {
   widget: [
     { type: 'text', key: 'widgetId', label: 'Widget ID' },
     ...as<HeaderConfig>(fixedField),
+    ...as<HeaderConfig>(navField),
     ...as<HeaderConfig>(elementBoxes('Next to the logo, level with the top container')),
     {
       type: 'group',
       label: 'Ticket button',
       fields: [
+        ...asLeaf<HeaderConfig>(ticketFields),
         {
           type: 'segmented',
           key: 'ticketPlacement',
@@ -51,6 +56,7 @@ export const schema: Schema<HeaderConfig> = {
             { value: 'nav', label: 'Next to navigation' },
           ],
           help: 'The button stays visible on mobile in both cases.',
+          visibleWhen: navShown,
         },
         ...asLeaf<HeaderConfig>(mobileTicketField),
       ],
@@ -59,6 +65,6 @@ export const schema: Schema<HeaderConfig> = {
   styles: [
     ...as<HeaderConfig>(headerStyleGroup),
     ...as<HeaderConfig>(elementStyleGroups),
-    { type: 'group', label: 'Navigation', fields: asLeaf<HeaderConfig>(burgerField) },
+    { type: 'group', label: 'Navigation', visibleWhen: navShown, fields: asLeaf<HeaderConfig>(burgerField) },
   ],
 }
