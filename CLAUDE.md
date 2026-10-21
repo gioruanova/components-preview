@@ -34,7 +34,7 @@ Vite + React 19 + TS + Tailwind v4 + shadcn/ui tool to preview and configure Saf
 ## Skills
 - `/mirror-sites <component>`: study a component on the Saffire starter sites (markup, behavior, styles) before defining it.
 - `/new-component <spec>`: build a component from a filled spec.
-- `/update-component <category>/<component> <change>`: change an existing one.
+- `/update-component <category>/<component> [html|scss|css|script|data|preview|options|docs] <change>`: change an existing one, or only one of its outputs.
 - `/new-category <name>`: add a category, or planned "coming soon" items.
 - `/adopt-source-structure <path>`: map the real source structure and nomenclature onto the outputs.
 - `/update-output-standards <config>`: change the Prettier/Stylelint rules for the output and make every component comply.

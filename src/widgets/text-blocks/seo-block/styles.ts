@@ -3,12 +3,15 @@ import { widthDecls, widthVars } from '@/tooling/layout'
 import { responsive, type Viewport } from '@/tooling/responsive'
 import type { Decls, Rule, Sheet } from '@/tooling/stylesheet'
 import { responsiveType } from '@/tooling/typography'
+import { widgetIdOf } from './codegen'
 import type { SeoBlockConfig } from './schema'
 
 const FLEX = { left: 'flex-start', center: 'center', right: 'flex-end' } as const
 const MARGIN = { left: '0 auto 0 0', center: '0 auto', right: '0 0 0 auto' } as const
 
 export function styles(c: SeoBlockConfig): Sheet {
+  const root = `#${widgetIdOf(c)}`
+
   // Responsive fields: desktop value + only what changes at tablet / mobile
   const align = responsive(c, 'alignment')
   const padY = responsive(c, 'paddingY')
@@ -47,18 +50,19 @@ export function styles(c: SeoBlockConfig): Sheet {
     }
 
     return {
-      sel: `#${c.widgetId}`,
+      sel: root,
       decls: {
-        'align-items': a && FLEX[a],
         'text-align': a,
         margin: a && c.widthMode !== 'full' ? MARGIN[a] : undefined,
         padding: paddingChanged ? `${padY.at[vp]}px ${padX.at[vp]}px` : undefined,
       },
       nest: [
+        { sel: '.seo-block-item', decls: { 'align-items': a && FLEX[a] } },
+        // Title line 1 typography is on the heading (a single line renders as plain text inside it)
         { sel: '.seo-title', decls: { 'align-items': a && FLEX[a], ...t.decls } },
-        // Clamp goes on each line, so the divider inside the heading is never cut off
-        { sel: '.seo-title-line1', decls: { ...t.clamp } },
-        { sel: '.seo-title-line2', decls: { ...t2.decls, ...t2.clamp } },
+        // Clamp goes on each line span when the title has two lines
+        { sel: '.seo-title > span:first-child', decls: { ...t.clamp } },
+        { sel: '.seo-title > span + span', decls: { ...t2.decls, ...t2.clamp } },
         { sel: '.seo-description', decls: { ...ds.decls, ...ds.clamp } },
         { sel: '.buttons-container', decls: buttons },
       ],
@@ -66,9 +70,11 @@ export function styles(c: SeoBlockConfig): Sheet {
   }
 
   const desktop = at('desktop')
+  const nested = (sel: string) => desktop.nest!.find((r) => 'sel' in r && r.sel === sel)!.decls
 
   return {
-    scope: `.${c.widgetId}-signup-container`,
+    // The real markup has no wrapper of its own: the Spark widget container provides the spacing (wrapperSpacing: false)
+    scope: root,
     title: 'SEO Block',
     vars: [
       { name: 'seo-bg-color', value: c.backgroundColor, group: 'Colors' },
@@ -85,14 +91,13 @@ export function styles(c: SeoBlockConfig): Sheet {
       ...b2.vars,
     ],
     rules: [
-      { sel: `.${c.widgetId}-signup-container`, decls: { 'box-sizing': 'border-box', display: 'flex' } }, // padding: shared widget spacing (tooling)
       {
-        sel: `#${c.widgetId}`,
+        sel: root,
         decls: {
           'box-sizing': 'border-box',
           display: 'flex',
           'flex-direction': 'column',
-          gap: '20px',
+          gap: '40px',
           ...widthDecls(c, 'seo-max-width'),
           margin: c.widthMode === 'full' ? 0 : undefined,
           ...desktop.decls,
@@ -101,15 +106,21 @@ export function styles(c: SeoBlockConfig): Sheet {
           border: c.borderWidth ? '$$seo-border-width solid $$seo-border-color' : undefined,
         },
         nest: [
-          { sel: '.seo-title', decls: { display: 'flex', 'flex-direction': 'column', margin: 0, ...desktop.nest![0].decls } },
-          { sel: '.seo-title-line1', decls: { display: 'block', ...desktop.nest![1].decls } },
-          { sel: '.seo-title-line2', decls: { display: 'block', ...desktop.nest![2].decls } },
+          // One per row with a selected item
+          { sel: '.seo-block-item', decls: { display: 'flex', 'flex-direction': 'column', gap: '20px', ...nested('.seo-block-item') } },
+          { sel: '.seo-title', decls: { display: 'flex', 'flex-direction': 'column', margin: 0, ...nested('.seo-title') } },
+          // Both line rules always exist in the base CSS, so tablet / mobile overrides (clamp, line 2 type) apply
+          { sel: '.seo-title > span:first-child', decls: { display: 'block', ...nested('.seo-title > span:first-child') } },
+          { sel: '.seo-title > span + span', decls: { display: 'block', ...nested('.seo-title > span + span') } },
           {
-            sel: '.seo-divider',
-            decls: { display: 'block', width: '100%', 'max-width': '290px', height: '6px', 'margin-top': '15px', 'background-color': '$$seo-divider-color' },
+            sel: '.title-divider',
+            decls: { display: 'block', width: '100%', 'max-width': '290px', height: '6px', 'background-color': '$$seo-divider-color' },
           },
-          { sel: '.seo-description', decls: { 'max-width': '620px', margin: 0, ...desktop.nest![3].decls } },
-          { sel: '.buttons-container', decls: { display: 'flex', 'flex-wrap': 'wrap', gap: '10px', ...desktop.nest![4].decls } },
+          { sel: '.seo-description', decls: { 'max-width': '620px', margin: 0, ...nested('.seo-description') } },
+          // One <p> per paragraph
+          { sel: '.seo-description p', decls: { margin: '0 0 0.75em' } },
+          { sel: '.seo-description p:last-child', decls: { 'margin-bottom': 0 } },
+          { sel: '.buttons-container', decls: { display: 'flex', 'flex-wrap': 'wrap', gap: '10px', ...nested('.buttons-container') } },
           {
             sel: '.button',
             decls: {

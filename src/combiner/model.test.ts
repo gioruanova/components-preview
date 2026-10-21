@@ -43,9 +43,9 @@ describe('combiner model', () => {
     l = addItem(l, col, cards).layout
     l = addItem(l, col, cards).layout
     l = addItem(l, col, seo).layout
-    expect(l.sections[0].columns[0].items.map((i) => i.config.widgetId)).toEqual(['customCards', 'customCards2', 'customSeoBlock'])
+    expect(l.sections[0].columns[0].items.map((i) => i.config.widgetId)).toEqual(['customCards', 'customCards2', 'seoBlock'])
     l = duplicateSection(l, l.sections[0].id)
-    expect(l.sections[1].columns[0].items.map((i) => i.config.widgetId)).toEqual(['customCards3', 'customCards4', 'customSeoBlock2'])
+    expect(l.sections[1].columns[0].items.map((i) => i.config.widgetId)).toEqual(['customCards3', 'customCards4', 'seoBlock2'])
   })
 
   it('keeps components when the column count shrinks', () => {
@@ -129,7 +129,7 @@ describe('combiner model', () => {
     expect(toCss(sectionSheets(l.sections[0]))).toContain('grid-template-columns: minmax(0, 1fr);')
     // a column holding only "removed" (isEmpty) widgets still counts as empty
     const withSeo = addItem(l, a.id, seo)
-    const hide = { showTitle: false, showDescription: false, button1Show: false, button2Show: false }
+    const hide = { itemCount: 0 } // no row with a selected item
     const removed: Layout = {
       ...withSeo.layout,
       sections: withSeo.layout.sections.map((s) => ({
