@@ -12,6 +12,7 @@ Vite + React 19 + TS + Tailwind v4 + shadcn/ui tool to preview and configure Saf
 - `src/combiner/`: Layout builder (pure model in `model.ts`, covered by `model.test.ts`).
 - `docs/specs/<category>--<component>.md`: the source of truth for each component. The template is `docs/component-spec.template.md`.
 - `docs/reference.md`: full reference (field types, style model, container, buttons, Layout builder, brand, ordering). **Read it when building or changing a component.**
+- `docs/saffire-components.md`: how components are built in Saffire (framework, Spark configuration, template model, tables).
 - `docs/output-integration.md`: how to adopt the real source-code structure and nomenclature when it arrives.
 - `output-standards/`: the Prettier + Stylelint configs the generated code must follow (see its README).
 - `docs/brief/`: the original brief, brand references and logos.

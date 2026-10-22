@@ -125,7 +125,7 @@ export function containerSheet(c: ContainerConfig, mode: 'preview' | 'output', s
 }
 
 /**
- * Outer spacing of every widget, on its wrapper (the sheet `scope`, e.g. `.customCards-container`). One value for all
+ * Outer spacing of every widget, on its wrapper (the sheet `scope`, e.g. `.<widgetId>-container`). One value for all
  * widgets, and only when nothing around it already provides spacing: inside the global container or a Layout builder
  * section the container padding (and column gap) is the spacing, so the wrapper gets none — no doubled space.
  */

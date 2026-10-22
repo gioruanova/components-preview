@@ -22,11 +22,11 @@ describe('seo-block items and rows', () => {
     expect(toData(empty)).toMatchObject({ hasData: false, items: [] })
   })
 
-  it('repeats .seo-block-item per row inside #{WidgetId}.seo-block', () => {
+  it('repeats the item parts per row inside .seoBlock-container > #{WidgetId} (no item wrapper)', () => {
     const html = toHtml(two)
-    expect(html).toContain('<div id="seoBlock" class="seo-block">')
-    expect(html).toContain('repeats once per row with a selected item (2)')
-    expect(html).toContain('<div class="seo-block-item">')
+    expect(html).toMatch(/<div class="seoBlock-container">\s*<div id="seoBlock">/)
+    expect(html).toContain('repeat once per row with a selected item (2)')
+    expect(html).not.toContain('seo-block-item')
   })
 })
 
@@ -76,8 +76,8 @@ describe('seo-block description and divider', () => {
   })
 
   it('renders the divider from the placement option only', () => {
-    expect(toHtml(defaults)).toContain('<span class="title-divider"></span>')
-    expect(toHtml({ ...defaults, showDivider: false })).not.toContain('title-divider')
+    expect(toHtml(defaults)).toContain('<span class="seo-divider"></span>')
+    expect(toHtml({ ...defaults, showDivider: false })).not.toContain('seo-divider')
   })
 })
 
@@ -165,7 +165,7 @@ describe('seo-block styles', () => {
   it('styles one paragraph per <p> and the divider', () => {
     const css = toCss([styles(defaults)])
     expect(css).toContain('#seoBlock .seo-description p {')
-    expect(css).toContain('#seoBlock .title-divider {')
+    expect(css).toContain('#seoBlock .seo-divider {')
   })
 
   it('exposes typography and colors as variables', () => {

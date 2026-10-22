@@ -13,7 +13,7 @@ const GAP = 20
 
 export function styles(c: CardsConfig): Sheet {
   const circle = c.shape === 'circle'
-  const hover = '.card-widget-item:not(.void-link):hover, .card-widget-item:not(.void-link):focus-within'
+  const hover = '.card-item:hover, .card-item:focus-within'
 
   // Responsive fields: desktop value + only what changes at tablet / mobile
   const perRowR = responsive(c, 'cardsPerRow')
@@ -33,7 +33,7 @@ export function styles(c: CardsConfig): Sheet {
   // Cards per row, min width and "Card sizing" (keep / stretch): shared row model (tooling/itemRow)
   const row = itemRow({
     root: `#${c.widgetId}`,
-    item: '.card-widget-item',
+    item: '.card-item',
     name: 'cards-grid',
     gap: GAP,
     gapVar: 'cards-gap',
@@ -78,7 +78,7 @@ export function styles(c: CardsConfig): Sheet {
       sel: `#${c.widgetId}`,
       nest: [
         {
-          sel: '.card-widget-item',
+          sel: '.card-item',
           decls: {
             ...row.itemOverride(vp),
             'max-width': maxWidth,
@@ -88,11 +88,9 @@ export function styles(c: CardsConfig): Sheet {
           // Same nesting as the base rules → same specificity, so the media override wins
           nest: [
             { sel: '.card-content', decls: { 'justify-content': v && V[v], 'align-items': h && H[h], 'text-align': h } },
-            { sel: '.widget-title-wrapper', decls: { 'justify-content': h && H[h], 'max-width': h && (h === 'center' ? '75%' : '90%') } },
-            { sel: '.widget-title', decls: { ...title[vp].decls, ...title[vp].clamp } },
-            { sel: '.hover-content', decls: { 'align-items': h && H[h] } },
+            { sel: '.widget-title', decls: { 'max-width': h && (h === 'center' ? '75%' : '90%'), ...title[vp].decls, ...title[vp].clamp } },
             { sel: '.widget-description', decls: { ...desc[vp].decls, ...desc[vp].clamp } },
-            { sel: '.cards-buttons-container', decls: { 'justify-content': h && H[h] } },
+            { sel: '.buttons-container', decls: { 'justify-content': h && H[h] } },
           ],
         },
       ],
@@ -101,7 +99,7 @@ export function styles(c: CardsConfig): Sheet {
 
   const h = horR.desktop
   return {
-    scope: `.${c.widgetId}-container`,
+    scope: `#${c.widgetId}`,
     title: 'Cards',
     vars: [
       { name: 'card-color', value: c.cardColor, group: 'Colors' },
@@ -120,7 +118,6 @@ export function styles(c: CardsConfig): Sheet {
       ...b2.vars,
     ],
     rules: [
-      { sel: `.${c.widgetId}-container`, decls: { 'box-sizing': 'border-box', width: '100%' } }, // padding: shared widget spacing (tooling)
       {
         sel: `#${c.widgetId}`,
         decls: {
@@ -131,7 +128,7 @@ export function styles(c: CardsConfig): Sheet {
         },
         nest: [
           {
-            sel: '.card-widget-item',
+            sel: '.card-item',
             decls: {
               'box-sizing': 'border-box',
               position: 'relative',
@@ -149,29 +146,19 @@ export function styles(c: CardsConfig): Sheet {
               'text-decoration': 'none',
             },
             nest: [
+              { sel: '.image-container', decls: { position: 'absolute', inset: 0, overflow: 'hidden' } },
               {
-                sel: '.image-container',
-                decls: {
-                  position: 'absolute',
-                  inset: 0,
-                  'background-size': 'cover',
-                  'background-position': 'center',
-                  'background-repeat': 'no-repeat',
-                  transform: 'scale(1)',
-                  transition: '0.3s',
-                },
+                sel: '.card-image',
+                decls: { display: 'block', width: '100%', height: '100%', 'object-fit': 'cover', transform: 'scale(1)', transition: '0.3s' },
               },
               {
                 sel: '.overlay',
                 decls: {
                   position: 'absolute',
-                  left: 0,
-                  bottom: '100%',
+                  inset: 0,
                   'z-index': 1,
-                  width: '100%',
-                  height: '100%',
                   'background-color': c.titleBackground ? '$$card-color' : 'rgba(0, 0, 0, 0.7)',
-                  opacity: 0.94,
+                  opacity: 0.35,
                   transition: '0.3s',
                 },
               },
@@ -186,30 +173,20 @@ export function styles(c: CardsConfig): Sheet {
                   'flex-direction': 'column',
                   'justify-content': V[vertR.desktop],
                   'align-items': H[h],
-                  gap: 0,
+                  gap: '10px',
                   padding: circle ? '14%' : '16px',
                   'text-align': h,
-                  transition: '0.3s',
-                },
-              },
-              {
-                sel: '.widget-title-wrapper',
-                decls: {
-                  'box-sizing': 'border-box',
-                  display: 'flex',
-                  'justify-content': H[h],
-                  width: '100%',
-                  'max-width': h === 'center' ? '75%' : '90%',
-                  padding: c.titleBackground ? '13px 16px' : '0',
-                  'border-radius': '8px',
-                  'background-color': c.titleBackground ? '$$card-color' : 'transparent',
-                  transition: '0.3s',
                 },
               },
               {
                 sel: '.widget-title',
                 decls: {
+                  'box-sizing': 'border-box',
+                  'max-width': h === 'center' ? '75%' : '90%',
                   margin: 0,
+                  padding: c.titleBackground ? '13px 16px' : '0',
+                  'border-radius': '8px',
+                  'background-color': c.titleBackground ? '$$card-color' : 'transparent',
                   ...title.base.decls,
                   ...title.base.clamp,
                   // natural line breaks instead of awkward cuts
@@ -218,22 +195,8 @@ export function styles(c: CardsConfig): Sheet {
                   'text-shadow': c.titleBackground ? undefined : '0 1px 3px rgba(0, 0, 0, 0.6)',
                 },
               },
-              {
-                sel: '.hover-content',
-                decls: {
-                  display: 'flex',
-                  'flex-direction': 'column',
-                  'align-items': H[h],
-                  gap: '10px',
-                  width: '100%',
-                  'max-height': 0,
-                  opacity: 0,
-                  overflow: 'hidden',
-                  transition: '0.3s',
-                },
-              },
               { sel: '.widget-description', decls: { margin: 0, ...desc.base.decls, ...desc.base.clamp } },
-              { sel: '.cards-buttons-container', decls: { display: 'flex', 'flex-wrap': 'wrap', 'justify-content': H[h], gap: '10px' } },
+              { sel: '.buttons-container', decls: { display: 'flex', 'flex-wrap': 'wrap', 'justify-content': H[h], gap: '10px' } },
               {
                 sel: '.button',
                 decls: {
@@ -256,15 +219,12 @@ export function styles(c: CardsConfig): Sheet {
               ...customButtons,
             ],
           },
-          // Hover / focus reveal — same on every viewport. Non-interactive cards (.void-link) don't react.
+          // Hover / focus: the image zooms and the overlay gets darker; the content is always visible (same on every viewport)
           {
             sel: hover,
             nest: [
-              { sel: '.overlay', decls: { bottom: 0 } },
-              { sel: '.image-container', decls: { transform: 'scale(1.15)' } },
-              { sel: '.card-content', decls: { gap: '10px' } },
-              { sel: '.widget-title-wrapper', decls: { 'background-color': 'transparent', padding: '0' } },
-              { sel: '.hover-content', decls: { 'max-height': '320px', opacity: 1 } },
+              { sel: '.card-image', decls: { transform: 'scale(1.15)' } },
+              { sel: '.overlay', decls: { opacity: 0.7 } },
             ],
           },
         ],

@@ -53,11 +53,11 @@ export function styles(c: SeoBlockConfig): Sheet {
       sel: root,
       decls: {
         'text-align': a,
+        'align-items': a && FLEX[a],
         margin: a && c.widthMode !== 'full' ? MARGIN[a] : undefined,
         padding: paddingChanged ? `${padY.at[vp]}px ${padX.at[vp]}px` : undefined,
       },
       nest: [
-        { sel: '.seo-block-item', decls: { 'align-items': a && FLEX[a] } },
         // Title line 1 typography is on the heading (a single line renders as plain text inside it)
         { sel: '.seo-title', decls: { 'align-items': a && FLEX[a], ...t.decls } },
         // Clamp goes on each line span when the title has two lines
@@ -97,7 +97,7 @@ export function styles(c: SeoBlockConfig): Sheet {
           'box-sizing': 'border-box',
           display: 'flex',
           'flex-direction': 'column',
-          gap: '40px',
+          gap: '20px', // the items' parts are siblings inside #{WidgetId} (no item wrapper in the Saffire markup)
           ...widthDecls(c, 'seo-max-width'),
           margin: c.widthMode === 'full' ? 0 : undefined,
           ...desktop.decls,
@@ -106,14 +106,12 @@ export function styles(c: SeoBlockConfig): Sheet {
           border: c.borderWidth ? '$$seo-border-width solid $$seo-border-color' : undefined,
         },
         nest: [
-          // One per row with a selected item
-          { sel: '.seo-block-item', decls: { display: 'flex', 'flex-direction': 'column', gap: '20px', ...nested('.seo-block-item') } },
           { sel: '.seo-title', decls: { display: 'flex', 'flex-direction': 'column', margin: 0, ...nested('.seo-title') } },
           // Both line rules always exist in the base CSS, so tablet / mobile overrides (clamp, line 2 type) apply
           { sel: '.seo-title > span:first-child', decls: { display: 'block', ...nested('.seo-title > span:first-child') } },
           { sel: '.seo-title > span + span', decls: { display: 'block', ...nested('.seo-title > span + span') } },
           {
-            sel: '.title-divider',
+            sel: '.seo-divider',
             decls: { display: 'block', width: '100%', 'max-width': '290px', height: '6px', 'background-color': '$$seo-divider-color' },
           },
           { sel: '.seo-description', decls: { 'max-width': '620px', margin: 0, ...nested('.seo-description') } },

@@ -43,9 +43,9 @@ describe('combiner model', () => {
     l = addItem(l, col, cards).layout
     l = addItem(l, col, cards).layout
     l = addItem(l, col, seo).layout
-    expect(l.sections[0].columns[0].items.map((i) => i.config.widgetId)).toEqual(['customCards', 'customCards2', 'seoBlock'])
+    expect(l.sections[0].columns[0].items.map((i) => i.config.widgetId)).toEqual(['cardBlock', 'cardBlock2', 'seoBlock'])
     l = duplicateSection(l, l.sections[0].id)
-    expect(l.sections[1].columns[0].items.map((i) => i.config.widgetId)).toEqual(['customCards3', 'customCards4', 'seoBlock2'])
+    expect(l.sections[1].columns[0].items.map((i) => i.config.widgetId)).toEqual(['cardBlock3', 'cardBlock4', 'seoBlock2'])
   })
 
   it('keeps components when the column count shrinks', () => {

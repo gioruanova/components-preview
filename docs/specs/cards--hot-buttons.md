@@ -4,56 +4,66 @@
 - **Category:** `cards`
 - **Component name:** Hot Buttons
 - **Component slug:** `hot-buttons` (same slug as the former "coming soon" entry)
-- **Status:** beta (first iteration, no live Saffire widget to mirror yet)
+- **Status:** beta. Built in Saffire as **"Hot Buttons"** (technical key `hotButtons`, client-rendered; POC branch `feature/components-standarization`). Framework: `docs/saffire-components.md`.
 - **Summary (one line):** Big, bold shortcut tiles to the most important pages.
 - **Order in category:** 20
 
 ## 2. Functional description
 - A row of big shortcut buttons. Each button has a title and one URL, and the **whole button is the link**.
 - Each button can show an optional icon next to its title (built-in placeholder icons or an uploaded PNG). Icons can be hidden for the whole widget at once.
-- A button only renders when it has both a title and a URL. With no renderable button the widget is removed.
+- A button renders when it has a label; without a URL it shows but is not clickable (`void-link`). With no button the widget is removed.
 - The icon can sit left, right, above or below the title (per viewport).
 - Buttons per row, sizing, min width / height, padding, icon position and size, alignment and typography can differ per viewport (defaults: 2 per row on tablet, 1 on mobile).
 - "Button sizing" works like Cards Grid: Keep button size (equal widths, full rows fill the width, a short last row is centered) or Stretch to fill.
 
-## 3. Real markup (HTML template)
-No live widget yet — markup follows the Cards Grid conventions.
+## 3. Real markup (Saffire)
+Default template (Spark → Add Widget, editable per placement). The server renders the container; the `{#Items}` block
+(one button) is filled in the browser:
 ```html
-<div class="customHotButtons-container custom-hot-buttons-container">
-  <div id="customHotButtons">
-    <a href="${URL}" class="hot-button-item">
-      <img class="hot-button-icon" src="${Icon}" alt="" />
-      <span class="hot-button-title">${Title}</span>
-    </a>
-  </div>
+<div id="{WidgetId}" class="hot-buttons">
+  {#Items}
+  <a class="hot-button" href="{URL}" data-link-label="{Title}">
+    <div class="card-content">
+      {#ShowIcons}{#Icon}<div class="icon-wrapper"><img class="hot-button-icon" src="{IconURL}" alt="{IconAlt}" /></div>{/Icon}{/ShowIcons}
+      <span class="widget-title">{Title}</span>
+    </div>
+  </a>
+  {/Items}
 </div>
+
+<script type="text/javascript">
+$(function () {
+  saffire.widgets.hotButtons('#{WidgetId}', function ($el, data, hasData) {
+    // DOM is ready: manipulate the buttons here. data = { HasData, Items: [...] }
+  });
+});
+</script>
 ```
+Item tokens: `{Title}` (Button Label), `{URL}` (Button URL), `{IconURL}`, `{IconAlt}`, `{Source}`. Sections: `{#URL}`, `{#Icon}` (has an icon), `{#ShowIcons}` (option).
 
 ## 3b. Real CSS
-n/a — defaults follow the Saffire brand (`#0079c2`, Poppins) and Cards Grid.
+None shipped: sites style `.hot-buttons`, `.hot-button`, `.card-content`, `.icon-wrapper`, `.hot-button-icon`, `.widget-title` in their theme. The simulator styles below are a design reference.
 
 ## 4. Script
-`createCustomHotButtons(widgetData)` — renders one `.hot-button-item` per item that has a `Title` and a `URL`; the icon `<img>` only when `ShowIcons` and the item has an `Icon`. Links get `updateLinksAttributes(URL, Title)`. No renderable item → the widget is removed from the page.
+`hotButtons.js` + `widgetHelpers.js` are registered by the widget. The template calls `saffire.widgets.hotButtons('#{WidgetId}', function ($el, data, hasData) {…})`; the shared renderer (`saffire.utils.renderComponent`) reads the config the server left in place of `{#Items}`, loads the data, renders one button per item there, applies `updateLinksAttributes` to every link, then runs the function (also with `hasData: false`) and triggers `componentLoaded` on the container. No item → the container is removed and `<body>` gets `hotButtons-no-data`.
 
 ## 5. Data
 ```json
 {
-  "ShowIcons": true,
+  "HasData": true,
   "Items": [
-    { "Title": "Buy tickets", "URL": "https://example.com/tickets", "Icon": "/assets/icons/ticket.svg" },
-    { "Title": "Events", "URL": "https://example.com/events", "Icon": "/assets/icons/calendar.svg" },
-    { "Title": "Plan your visit", "URL": "https://example.com/visit", "Icon": "/assets/icons/map-pin.svg" },
-    { "Title": "Shop", "URL": "https://example.com/shop", "Icon": "/assets/icons/bag.svg" }
+    { "Source": "custom", "Title": "Buy tickets", "URL": "https://example.com/tickets", "IconURL": "https://…/ticket.png", "IconAlt": "" },
+    { "Source": "custom", "Title": "Events", "URL": "/events", "IconURL": "", "IconAlt": "" }
   ]
 }
 ```
-`Icon` is the exported asset path: built-in icons → `/assets/icons/<id>.svg`, PNG uploads → `/assets/icons/<file-name>.png`, none → `null`.
+`IconURL` / `IconAlt` come from the asset library. Empty alt → the button label is used. Fields disabled in the module are not sent.
 
 ## 6. Config options
 | Section | Label | Key | Field type | Default | Options / range | Visible when | Notes |
 |---|---|---|---|---|---|---|---|
 | A | Buttons (Title, URL, Icon) | items | list (text, text, image · icon library) | 4 items (see Data) | | | Icon: none / 8 placeholder icons / PNG uploads only. URL tip |
-| B | Widget ID | widgetId | text | `customHotButtons` | | | |
+| B | Widget ID | widgetId | text | `hotButtons` | | | |
 | B | Number of buttons | buttonCount | stepper | 4 | 1–12 | | |
 | B | Buttons per row | buttonsPerRow | stepper | 4 | 1–6 | | responsive · tablet 2, mobile 1 |
 | B | Show / hide → Show icons | showIcons | switch | on | | | |
@@ -74,12 +84,25 @@ n/a — defaults follow the Saffire brand (`#0079c2`, Poppins) and Cards Grid.
 | C | Content → Alignment | contentAlign | segmented | center | left / center / right | | responsive |
 | C | Typography → Title | titleFont | typography | Poppins 18 / 700 / 1.3 / `#ffffff` / uppercase | | | responsive |
 
+### 6b. Saffire configuration
+| Who / where | Label | Default | Rules |
+|---|---|---|---|
+| Client · Manage Items | Button Label | — | Required; max 40 (module, cap 100) |
+| Client · Manage Items | Button URL | — | Optional; no protocol → current protocol added; `javascript:` / `data:` rejected |
+| Client · Manage Items | Icon | — | Optional; asset library (Alt Text optional, "Use original image's metadata"); recommended 30 × 30 px |
+| Client · tab | Rows | — | Each row picks an item or "Select (empty)"; up to Max Items |
+| Spark user · Add Widget | Widget Id | `hotButtons` | Letters, numbers, `-`, `_`; invalid → `hotButtons-{placement id}` |
+| Spark user · Add Widget | Show Icons | on | Section `{#ShowIcons}` |
+| Spark user · Add Widget | Template | default template above | Per placement; "Reset to default template" |
+| Admin · Module | Max Items | 4 | 1–12 |
+| Admin · Module | Button Label / Button URL / Icon → Enabled, Required, Max Length, Recommended Width / Height | on/on/40 · on/off · on/off/30/30 | Disabled fields are hidden in the editor and not sent |
+
 ## 7. Rendering rules
-- A button renders only when its item has a non-empty Title **and** URL (shared helper for preview, codegen and script).
+- A button renders when its item has a label (shared helper for preview and codegen); without a URL it has no `href` and gets `void-link`.
 - Buttons added with "Number of buttons" start with a placeholder title and URL (`https://example.com/button-N`) so they render immediately.
 - The whole button is the `<a>` (`href` = URL, external links get `target/rel/aria-label` via `linkAttributes` / `updateLinksAttributes`).
 - The icon renders only when "Show icons" is on and the item has an icon; built-in icons and PNG uploads resolve to preview URLs in the simulator and to `/assets/icons/…` paths in the Data.
-- Icon position → `flex-direction` of `.hot-button-item`: left `row`, right `row-reverse`, top `column`, bottom `column-reverse`. Alignment maps to `justify-content` in a row and `align-items` in a column.
+- Icon position → `flex-direction` of `.card-content`: left `row`, right `row-reverse`, top `column`, bottom `column-reverse`. Alignment maps to `justify-content` in a row and `align-items` in a column.
 - Button sizing / per row / min width: shared row model (`tooling/itemRow`), same as Cards Grid ("Keep" = `flex: 0 1` + container queries, "Stretch" = `flex: 1 1`).
 - Hover / focus: background → hover background, title → hover text color.
 
@@ -90,9 +113,8 @@ n/a — defaults follow the Saffire brand (`#0079c2`, Poppins) and Cards Grid.
 - Everything marked responsive above can be changed per viewport.
 
 ## 9. Empty / removed state
-No button with both a title and a URL → "Component empty/removed" (`isEmpty`), the script removes the widget.
+No button with a label → "Component empty/removed" (`isEmpty`); in Saffire the container is removed and `<body>` gets `hotButtons-no-data`.
 
 ## 10. Out of scope / open questions
-- Real Saffire markup/CSS for hot buttons (adopt when available).
 - Final brand icon set (placeholders are white line icons for coloured buttons).
 - Icon recolouring (PNG icons keep their own colours).

@@ -95,15 +95,15 @@ export function toHtml(c: SeoBlockConfig) {
   const h = first.titleTag
   const twoLines = first.titleLines.length === 2
   return lines(
-    `<div id="${widgetIdOf(c)}" class="seo-block">`,
-    `  <!-- .seo-block-item repeats once per row with a selected item (${items.length}); next items use <${titleTagOf(c, 1)}> -->`,
-    '  <div class="seo-block-item">',
+    '<div class="seoBlock-container">',
+    `  <div id="${widgetIdOf(c)}">`,
+    `    <!-- {#Items}: title, divider, description and buttons repeat once per row with a selected item (${items.length}); next items use <${titleTagOf(c, 1)}> -->`,
     twoLines && `    <${h} class="seo-title" aria-label="\${TitleLine1} \${TitleLine2}">`,
     twoLines && '      <span>${TitleLine1}</span>',
     twoLines && '      <span>${TitleLine2}</span>',
     twoLines && `    </${h}>`,
     first.titleLines.length === 1 && `    <${h} class="seo-title">\${TitleText}</${h}>`,
-    c.showDivider && '    <span class="title-divider"></span>',
+    c.showDivider && '    <span class="seo-divider"></span>',
     first.paragraphs.length > 0 && '    <div class="seo-description">',
     first.paragraphs.length > 0 && `      <!-- one <p> per paragraph (${first.paragraphs.length}) -->`,
     first.paragraphs.length > 0 && '      <p>${Paragraph}</p>',

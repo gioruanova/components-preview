@@ -8,8 +8,10 @@ export function visibleItems(c: HotButtonsConfig): HotButtonItem[] {
   return Array.from({ length: c.buttonCount }, (_, i) => c.items[i] ?? newItem(i))
 }
 
-/** A button renders only when it has both a title and a URL (shared by preview, codegen and script). */
-export const isRendered = (item: HotButtonItem) => Boolean(item.Title.trim() && item.URL.trim())
+/** A button renders when it has a label (required in Spark). Without a URL it renders but is not clickable (void-link). */
+export const isRendered = (item: HotButtonItem) => Boolean(item.Title.trim())
+
+export const hasLink = (item: HotButtonItem) => Boolean(item.URL.trim())
 
 export const renderedItems = (c: HotButtonsConfig) => visibleItems(c).filter(isRendered)
 
@@ -18,51 +20,39 @@ export const iconOf = (item: HotButtonItem, c: HotButtonsConfig) => (c.showIcons
 
 export const isEmpty = (c: HotButtonsConfig) => renderedItems(c).length === 0
 
+/** Same shape as Saffire's GetWidgetModuleItemData for Hot Buttons. IconAlt empty → the label is used. */
 export function toData(c: HotButtonsConfig) {
+  const items = renderedItems(c)
   return {
-    ShowIcons: c.showIcons,
-    Items: visibleItems(c).map((item) => ({ Title: item.Title, URL: item.URL || null, Icon: (item.Icon && outputPath(item.Icon)) || null })),
+    HasData: items.length > 0,
+    Items: items.map((item) => ({ Source: 'custom', Title: item.Title, URL: item.URL, IconURL: (item.Icon && outputPath(item.Icon)) || '', IconAlt: '' })),
   }
 }
 
+/** Markup the Saffire default template renders (one button shown; the comment says how many repeat). */
 export function toHtml(c: HotButtonsConfig) {
-  if (isEmpty(c)) return '<!-- Widget has no data: it is removed from the page -->'
+  if (isEmpty(c)) return '<!-- No button: the container is removed and "hotButtons-no-data" is added to <body> -->'
   return lines(
-    `<div class="${c.widgetId}-container custom-hot-buttons-container">`,
-    `  <div id="${c.widgetId}">`,
-    `    <!-- .hot-button-item repeats once per item with a title and a URL (${renderedItems(c).length}); icon only when the item has one -->`,
-    '    <a href="${URL}" class="hot-button-item">',
-    c.showIcons && '      <img class="hot-button-icon" src="${Icon}" alt="" />',
-    '      <span class="hot-button-title">${Title}</span>',
-    '    </a>',
-    '  </div>',
+    `<div id="${c.widgetId}" class="hot-buttons">`,
+    `  <!-- a.hot-button repeats once per item ({#Items}, ${renderedItems(c).length}); without a URL: no href + class "void-link" -->`,
+    '  <a class="hot-button" href="${URL}">',
+    '    <div class="card-content">',
+    c.showIcons && '      <div class="icon-wrapper"><img class="hot-button-icon" src="${IconURL}" alt="${IconAlt}" /></div>',
+    '      <span class="widget-title">${Title}</span>',
+    '    </div>',
+    '  </a>',
     '</div>',
   )
 }
 
+/** The script call of the placement template (hotButtons.js + widgetHelpers.js are registered by the widget). */
 export function toScript(c: HotButtonsConfig) {
-  return `function createCustomHotButtons(widgetData) {
-  const widgetName = '${c.widgetId}';
-  const $widget = $(\`#\${widgetName}\`);
-  const widgetOpts = typeof ${c.widgetId}Opts === 'undefined' ? null : ${c.widgetId}Opts;
-  const { ShowIcons, Items } = widgetData;
-
-  // A button renders only when it has both a title and a URL
-  const items = (Items || []).filter(({ Title, URL }) => Title && URL);
-  if (!items.length) {
-    $widget.closest('.${c.widgetId}-container').remove();
-    return;
-  }
-
-  $widget.html(
-    items
-      .map(({ Title, URL, Icon }) => {
-        const icon = ShowIcons && Icon ? \`<img class="hot-button-icon" src="\${Icon}" alt="" />\` : '';
-        return \`<a href="\${URL}" class="hot-button-item" \${updateLinksAttributes(URL, Title)}>\${icon}<span class="hot-button-title">\${Title}</span></a>\`;
-      })
-      .join(''),
-  );
-}`
+  return `$(function () {
+  saffire.widgets.hotButtons('#${c.widgetId}', function ($el, data, hasData) {
+    // DOM is ready: manipulate the buttons here.
+    // data = { HasData, Items: [{ Source, Title, URL, IconURL, IconAlt }] }
+  });
+});`
 }
 
 export function codegen(c: HotButtonsConfig): WidgetCode {

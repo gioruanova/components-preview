@@ -47,7 +47,7 @@ export const newItem = (i: number): HotButtonItem => ({ Title: `Button ${i + 1}`
 
 // Saffire brand defaults (#0079c2, Poppins). Tablet / mobile values are explicit, editable defaults.
 export const defaults: HotButtonsConfig = withOverrides<HotButtonsConfig>({
-  widgetId: 'customHotButtons',
+  widgetId: 'hotButtons',
   showIcons: true,
   buttonCount: 4,
   items: [
@@ -82,7 +82,7 @@ export const defaults: HotButtonsConfig = withOverrides<HotButtonsConfig>({
   'buttonsPerRow@mobile': 1,
 })
 
-const URL_TIP = 'A button renders only when it has both a title and a URL. The whole button is the link.'
+const URL_TIP = 'A button renders when it has a label. The whole button is the link; without a URL it shows but is not clickable.'
 
 export const schema: Schema<HotButtonsConfig> = {
   // Content = only what the client edits. Show/hide toggles live in Widget configuration.
@@ -95,8 +95,8 @@ export const schema: Schema<HotButtonsConfig> = {
       itemLabel: (i) => `Button ${i + 1}`,
       newItem,
       itemFields: [
-        { key: 'Title', label: 'Title', type: 'text', tip: URL_TIP },
-        { key: 'URL', label: 'URL', type: 'text', tip: URL_TIP },
+        { key: 'Title', label: 'Button label', type: 'text', tip: URL_TIP },
+        { key: 'URL', label: 'Button URL', type: 'text', tip: URL_TIP },
         { key: 'Icon', label: 'Icon', type: 'image', library: 'icon', tip: 'Optional. Pick a placeholder icon or upload a PNG. Hidden for every button when "Show icons" is off.' },
       ],
     },

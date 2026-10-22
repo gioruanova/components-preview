@@ -10,96 +10,73 @@ export function visibleItems(c: CardsConfig): CardItem[] {
 export type CardButton = { n: 1 | 2; label: string; url: string }
 
 /**
- * Per-card rendering rules shared by the preview and the generated code.
- * A button renders only when it's enabled for the widget, has a label, and the card has its URL.
+ * Per-card rendering rules shared by the preview and the generated code (same as Saffire Card Block).
+ * A button renders only when it's shown for the widget and the card has its label and URL.
  */
 export function cardParts(item: CardItem, c: CardsConfig) {
+  const image = c.showImage && item.Image ? item.Image : ''
   const description = c.showDescription && item.Description ? item.Description : ''
   const buttons = (
     [
-      { n: 1, show: c.button1Show, label: c.button1Label, url: item.Button1URL },
-      { n: 2, show: c.button2Show, label: c.button2Label, url: item.Button2URL },
+      { n: 1, show: c.button1Show, label: item.Button1Label, url: item.Button1URL },
+      { n: 2, show: c.button2Show, label: item.Button2Label, url: item.Button2URL },
     ] as const
   )
     .filter((b) => b.show && b.label.trim() && b.url.trim())
-    .map(({ n, label, url }): CardButton => ({ n, label, url }))
-  return { description, buttons, interactive: Boolean(description || buttons.length) }
+    .map(({ n, label, url }): CardButton => ({ n, label: label.trim(), url: url.trim() }))
+  return { image, description, buttons }
 }
 
+/** Same shape as Saffire's GetWidgetModuleItemData for Card Block (own cards; event rows add DateRange / TimeRange). */
 export function toData(c: CardsConfig) {
+  const items = visibleItems(c)
   return {
-    ShowDescription: c.showDescription,
-    Button1Show: c.button1Show,
-    Button1Label: c.button1Label,
-    Button2Show: c.button2Show,
-    Button2Label: c.button2Label,
-    Items: visibleItems(c).map((item) => ({
-      ...item,
-      Button1URL: item.Button1URL || null,
-      Button2URL: item.Button2URL || null,
+    HasData: items.length > 0,
+    Items: items.map((item) => ({
+      Source: 'custom',
+      Title: item.Title,
+      Description: item.Description,
+      ImageURL: item.Image,
+      ImageAlt: '',
+      Button1Label: item.Button1Label,
+      Button1URL: item.Button1URL,
+      Button2Label: item.Button2Label,
+      Button2URL: item.Button2URL,
     })),
   }
 }
 
+/** Markup the Saffire default template renders (one card shown; the comment says how many repeat). */
 export function toHtml(c: CardsConfig) {
+  const t = c.titleTag
   const anyButton = c.button1Show || c.button2Show
   return lines(
-    `<div class="${c.widgetId}-container custom-cards-container">`,
-    `  <div id="${c.widgetId}">`,
-    `    <!-- .card-widget-item repeats once per item (${c.cardCount}); buttons only when the item has the URL -->`,
-    '    <a class="card-widget-item">',
-    "      <div class=\"image-container\" style=\"background-image: url('${Image}')\"></div>",
-    '      <div class="overlay"></div>',
-    '      <div class="card-content">',
-    '        <div class="widget-title-wrapper">',
-    '          <h3 class="widget-title">${Title}</h3>',
-    '        </div>',
-    (c.showDescription || anyButton) && '        <div class="hover-content">',
-    c.showDescription && '          <p class="widget-description">${Description}</p>',
-    anyButton && '          <div class="cards-buttons-container">',
-    c.button1Show && '            <a href="${Button1URL}" class="button button-1">${Button1Label}</a>',
-    c.button2Show && '            <a href="${Button2URL}" class="button button-2">${Button2Label}</a>',
-    anyButton && '          </div>',
-    (c.showDescription || anyButton) && '        </div>',
-    '      </div>',
-    '    </a>',
+    `<div id="${c.widgetId}" class="cards-container">`,
+    `  <!-- .card-item repeats once per item ({#Items}, ${c.cardCount}); image, description and buttons only when the item has them -->`,
+    '  <div class="card-item">',
+    c.showImage && '    <div class="image-container"><img class="card-image" src="${ImageURL}" alt="${ImageAlt}" /></div>',
+    c.showOverlay && '    <div class="overlay"></div>',
+    '    <div class="card-content">',
+    `      <${t} class="widget-title">\${Title}</${t}>`,
+    c.showDescription && '      <p class="widget-description">${Description}</p>',
+    anyButton && '      <div class="buttons-container">',
+    c.button1Show && '        <a class="button button-1" href="${Button1URL}">${Button1Label}</a>',
+    c.button2Show && '        <a class="button button-2" href="${Button2URL}">${Button2Label}</a>',
+    anyButton && '      </div>',
+    '    </div>',
     '  </div>',
     '</div>',
   )
 }
 
+/** The script call of the placement template (cardBlock.js + widgetHelpers.js are registered by the widget). */
 export function toScript(c: CardsConfig) {
-  return `function createCustomCards(widgetData) {
-  const widgetName = '${c.widgetId}';
-  const $widget = $(\`#\${widgetName}\`);
-  const widgetOpts = typeof ${c.widgetId}Opts === 'undefined' ? null : ${c.widgetId}Opts;
-  const { ShowDescription, Button1Show, Button1Label, Button2Show, Button2Label, Items } = widgetData;
-
-  $widget.find('.card-widget-item').each(function (x) {
-    const { Title, Description, Button1URL, Button2URL } = Items[x];
-    const $cardItem = $(this);
-
-    // A button renders only when enabled, labelled, and the card has its URL
-    const description = ShowDescription && Description ? \`<p class="widget-description">\${Description}</p>\` : '';
-    const button1 = Button1Show && Button1Label && Button1URL ? \`<a href="\${Button1URL}" class="button button-1">\${Button1Label}</a>\` : '';
-    const button2 = Button2Show && Button2Label && Button2URL ? \`<a href="\${Button2URL}" class="button button-2">\${Button2Label}</a>\` : '';
-
-    // A card with no description and no buttons is non-interactive
-    if (!description && !button1 && !button2) {
-      $cardItem.addClass('void-link').removeAttr('href');
-    }
-
-    $cardItem.append(\`
-      <div class="card-content">
-        <div class="widget-title-wrapper"><h3 class="widget-title">\${Title}</h3></div>
-        <div class="hover-content">
-          \${description}
-          <div class="cards-buttons-container">\${button1}\${button2}</div>
-        </div>
-      </div>
-    \`);
+  return `$(function () {
+  saffire.widgets.cardBlock('#${c.widgetId}', function ($el, data, hasData) {
+    // DOM is ready: manipulate the cards here.
+    // data = { HasData, Items: [{ Source, Title, Description, ImageURL, ImageAlt, Button1Label, Button1URL, Button2Label, Button2URL }] }
   });
-}`
+});`
 }
 
 export function codegen(c: CardsConfig): WidgetCode {

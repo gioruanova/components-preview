@@ -13,7 +13,7 @@ import type { ContainerBlock, Decls, Rule } from './stylesheet'
  * declared only where it is non-zero / changes).
  */
 export type ItemRowOptions = {
-  /** Row selector, e.g. `#customCards`. */
+  /** Row selector, e.g. `#cardBlock`. */
   root: string
   /** Item selector nested in the row, e.g. `.card-widget-item`. */
   item: string

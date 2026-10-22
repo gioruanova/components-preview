@@ -67,7 +67,7 @@ export function removeSiteHeader(layout: Layout): Layout {
   return rest
 }
 
-/** Widget IDs must be unique on a page (CSS is scoped by them): customCards, customCards2, … */
+/** Widget IDs must be unique on a page (CSS is scoped by them): cardBlock, cardBlock2, … */
 export function uniqueWidgetId(layout: Layout, base: string, reserved: Set<string> = new Set()): string {
   const used = new Set([...reserved, ...allItems(layout).map((i) => String(i.config.widgetId ?? ''))])
   if (!used.has(base)) return base

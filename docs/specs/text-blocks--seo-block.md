@@ -21,15 +21,15 @@
 
 ## 3. Real markup (default template, editable per placement)
 ```html
-<div id="{WidgetId}" class="seo-block">
-{#Items}
-  <div class="seo-block-item">
+<div class="seoBlock-container">
+  <div id="{WidgetId}">
+  {#Items}
     {#ShowTitle}{TitleTagStart} class="seo-title"{TitleAriaLabelAttribute}>
       {#ShowBothTitleLines}<span>{TitleLine1}</span>
       <span>{TitleLine2}</span>{/ShowBothTitleLines}
       {#ShowSingleTitleLine}{TitleText}{/ShowSingleTitleLine}
     {TitleTagEnd}{/ShowTitle}
-    {#ShowDivider}<span class="title-divider"></span>{/ShowDivider}
+    {#ShowDivider}<span class="seo-divider"></span>{/ShowDivider}
     {#ShowDescription}<div class="seo-description">
       {Description}
     </div>{/ShowDescription}
@@ -37,8 +37,8 @@
       {#ShowButton1}<a class="button" {Button1Attributes}>{Button1Label}</a>{/ShowButton1}
       {#ShowButton2}<a class="button" {Button2Attributes}>{Button2Label}</a>{/ShowButton2}
     </div>{/ShowButtons}
+  {/Items}
   </div>
-{/Items}
 </div>
 
 <script type="text/javascript">
@@ -51,10 +51,10 @@ $(function () {
 ```
 Rendered example (two lines, h1):
 ```html
-<div id="seoBlock" class="seo-block">
-  <div class="seo-block-item">
+<div class="seoBlock-container">
+  <div id="seoBlock">
     <h1 class="seo-title" aria-label="Search Engine Optimized Title"><span>Search Engine</span><span>Optimized Title</span></h1>
-    <span class="title-divider"></span>
+    <span class="seo-divider"></span>
     <div class="seo-description"><p>…</p><p>…</p></div>
     <div class="buttons-container"><a class="button" href="/learn-more" aria-label="Learn More">Learn More</a></div>
   </div>
@@ -122,21 +122,19 @@ Placement options (Spark → Add / Edit Widget → Component Options):
 | Title Heading | headingLevel | select | h1 | h1–h6; first item uses it, next items one level lower (capped at h6) |
 | Show Title Line 1 / 2 · Divider · Description · Button 1 / 2 | showTitleLine1, showTitleLine2, showDivider, showDescription, button1Show, button2Show | switches | all on | Checkbox + text, one per row |
 
-SEO Block Module (admin — Data Sources → Create / Edit Module):
+SEO Block Module (admin — Data Sources → Create / Edit Module, generic module editor):
 
 | Label | Key (simulator) | Default | Rules |
 |---|---|---|---|
 | Name | — | — | Required; tab name in Homepage Features |
 | Display Rank | — | last | Order of the tab |
-| Max Items | maxItems | 1 | 1–50 in Spark; rows the tab allows = items shown |
+| Max Items | maxItems | 1 | 1–12; rows the tab allows = items shown |
 | (Rows with an item selected) | itemCount | 1 | Simulator only: 0 = empty widget |
-| Title 1 / 2 Enabled · Required · Max Length | titleLine1Enabled, titleLine2Enabled | on / on · on / off · 255 / 255 | Required ⇒ enabled; disabled fields are hidden in the editor and not rendered |
-| Description Enabled · Required | descriptionEnabled | on · off | Required ⇒ at least one paragraph |
-| Paragraphs Limit · Paragraph Max Length | paragraphLimit | 5 · 1000 | |
-| Number of Buttons | buttonCount | 2 | None / 1 / 2 |
-| Button 1 / 2 Label Max Length | — | 50 / 50 | |
+| Title Line 1 / 2 → Enabled · Required · Max Length | titleLine1Enabled, titleLine2Enabled | on / on · on / off · 255 / 255 | Required ⇒ enabled; disabled fields are hidden in the editor and not rendered |
+| Description → Enabled · Required · Max Length · Limit | descriptionEnabled, paragraphLimit | on · off · 1000 · 5 | Required ⇒ at least one paragraph |
+| Button 1 / 2 → Enabled · Required · Label Max Length | buttonCount | on · off · 50 | The simulator's "Number of buttons" = how many are enabled |
 
-Data source (admin): Configurator `Saffire.Events.BLL.Website.Widgets.SeoBlockWidgetConfigurator, Saffire`, Cache Key `SeoBlock` and Source Module Class Type "SEO Block Module" are pre-filled.
+Data source (admin): Configurator `Saffire.Events.BLL.Website.Widgets.ComponentWidgetConfigurator, Saffire`, Cache Key `Component_seoBlock` and Source Module Class Type "Seo Widget Module" are pre-filled.
 
 ### C · Styles (simulator)
 | Label | Key | Field type | Default | Notes |
@@ -177,7 +175,8 @@ No wrapper spacing of its own (`wrapperSpacing: false`): the Spark widget contai
 - No row with a selected item (or no module / data source): nothing is rendered and `<body>` gets `seoBlock-no-data`. The callback still runs with `hasData: false`.
 
 ## 11. Saffire implementation (reference)
-- Tables: `SAF_MODULE_SEOBLOCK` (module), `SAF_MODULE_SEOBLOCK_ITEMS`, `SAF_MODULE_SEOBLOCK_PARAGRAPHS`, `SAF_MODULE_SEOBLOCK_SLOTS` (rows), `SAF_MODULE_COMPONENT_DATA_SOURCES` (data source → module), `SAF_MODULE_WIDGET_ITEM_OPTIONS` (placement options).
-- Scripts: `Builds/ComponentsStandarization/Release Script.sql` (tables, safe for every client), `Enable seoBlock.sql` (registers "Seo Widget" per pilot client = feature gate), `Rollback seoBlock.sql`.
-- Code: `SeoBlockComponentDefinition` (template, options, tokens), `ComponentWidgetDisplayControl` (server render + JSON data + scripts), `WidgetTemplateRenderer`, `WidgetLinkHelper`, `SeoBlockWidgetConfigurator`, `SeoBlockRepository`.
+- Framework shared with Hot Buttons and Card Block: `docs/saffire-components.md` (same template model; SEO Block is the server-rendered one).
+- Tables: `SAF_MODULE_SEOBLOCK` (module + per-field settings), `SAF_MODULE_SEOBLOCK_ITEMS`, `SAF_MODULE_SEOBLOCK_PARAGRAPHS`, `SAF_MODULE_SEOBLOCK_SLOTS` (rows), `SAF_MODULE_COMPONENT_DATA_SOURCES` (data source → module), `SAF_MODULE_WIDGET_ITEM_OPTIONS` (placement options).
+- Scripts: `Builds/ComponentsStandarization/Release Script.sql` (tables + the "Seo Widget" row, which is the feature gate; idempotent), `Rollback seoBlock.sql`.
+- Code: `SeoBlockComponentDefinition` (fields, template, options, tokens) on the generic framework (`ComponentBLL`, `ComponentStore`, `ComponentWidgetConfigurator`, generic Spark screens), `ComponentWidgetDisplayControl` (server render + JSON data + scripts), `WidgetTemplateRenderer`, `WidgetLinkHelper`.
 - Cache: under the widget cache (`{W}`); saving an item, a row, the module or the placement clears the affected keys.

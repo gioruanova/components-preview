@@ -11,7 +11,7 @@ const DIRECTION = { left: 'row', right: 'row-reverse', top: 'column', bottom: 'c
 
 export function styles(c: HotButtonsConfig): Sheet {
   const root = `#${c.widgetId}`
-  const hover = '.hot-button-item:hover, .hot-button-item:focus-visible'
+  const hover = '.hot-button:not(.void-link):hover, .hot-button:not(.void-link):focus-visible'
 
   // Responsive fields: desktop value + only what changes at tablet / mobile
   const perRowR = responsive(c, 'buttonsPerRow')
@@ -28,7 +28,7 @@ export function styles(c: HotButtonsConfig): Sheet {
   // Buttons per row, min width and sizing: same row model as Cards Grid (tooling/itemRow)
   const row = itemRow({
     root,
-    item: '.hot-button-item',
+    item: '.hot-button',
     name: 'hot-buttons',
     gap: c.gap,
     gapVar: 'hot-buttons-gap',
@@ -58,17 +58,22 @@ export function styles(c: HotButtonsConfig): Sheet {
       sel: root,
       nest: [
         {
-          sel: '.hot-button-item',
-          decls: {
-            ...row.itemOverride(vp),
-            ...(layoutChanged ? layout(vp) : {}),
-            gap: iconGap.changed(vp) ? iconGap.at(vp) : undefined,
-            'min-height': minHeight.changed(vp) ? minHeight.at(vp) : undefined,
-            padding: padChanged ? `${padY.at(vp)} ${padX.at(vp)}` : undefined,
-          },
+          sel: '.hot-button',
+          decls: { ...row.itemOverride(vp) },
           nest: [
-            { sel: '.hot-button-icon', decls: { width: iconSize.changed(vp) ? iconSize.at(vp) : undefined, height: iconSize.changed(vp) ? iconSize.at(vp) : undefined } },
-            { sel: '.hot-button-title', decls: { ...title[vp].decls, ...title[vp].clamp } },
+            {
+              sel: '.card-content',
+              decls: {
+                ...(layoutChanged ? layout(vp) : {}),
+                gap: iconGap.changed(vp) ? iconGap.at(vp) : undefined,
+                'min-height': minHeight.changed(vp) ? minHeight.at(vp) : undefined,
+                padding: padChanged ? `${padY.at(vp)} ${padX.at(vp)}` : undefined,
+              },
+              nest: [
+                { sel: '.icon-wrapper', decls: { width: iconSize.changed(vp) ? iconSize.at(vp) : undefined, height: iconSize.changed(vp) ? iconSize.at(vp) : undefined } },
+                { sel: '.widget-title', decls: { ...title[vp].decls, ...title[vp].clamp } },
+              ],
+            },
           ],
         },
       ],
@@ -81,7 +86,7 @@ export function styles(c: HotButtonsConfig): Sheet {
   ]
 
   return {
-    scope: `.${c.widgetId}-container`,
+    scope: root,
     title: 'Hot Buttons',
     vars: [
       { name: 'hot-button-color', value: c.buttonColor, group: 'Colors' },
@@ -101,21 +106,16 @@ export function styles(c: HotButtonsConfig): Sheet {
       ...widthVars(c, 'hot-buttons-max-width'),
     ],
     rules: [
-      { sel: `.${c.widgetId}-container`, decls: { 'box-sizing': 'border-box', width: '100%' } }, // padding: shared widget spacing (tooling)
       {
         sel: root,
         decls: { 'box-sizing': 'border-box', ...row.rootDecls, ...widthDecls(c, 'hot-buttons-max-width'), margin: '0 auto' },
         nest: [
           {
-            sel: '.hot-button-item',
+            sel: '.hot-button',
             decls: {
               'box-sizing': 'border-box',
               display: 'flex',
-              ...layout('desktop'),
-              gap: iconGap.at('desktop'),
               ...row.itemDecls,
-              'min-height': minHeight.at('desktop'),
-              padding: `${padY.at('desktop')} ${padX.at('desktop')}`,
               'background-color': '$$hot-button-color',
               border: c.borderWidth ? '$$hot-button-border-width solid $$hot-button-border-color' : undefined,
               'border-radius': '$$hot-button-radius',
@@ -125,16 +125,29 @@ export function styles(c: HotButtonsConfig): Sheet {
             },
             nest: [
               {
-                sel: '.hot-button-icon',
-                decls: { display: 'block', 'flex-shrink': 0, width: iconSize.at('desktop'), height: iconSize.at('desktop'), 'object-fit': 'contain' },
+                sel: '.card-content',
+                decls: {
+                  'box-sizing': 'border-box',
+                  display: 'flex',
+                  flex: '1 1 auto',
+                  ...layout('desktop'),
+                  gap: iconGap.at('desktop'),
+                  'min-height': minHeight.at('desktop'),
+                  padding: `${padY.at('desktop')} ${padX.at('desktop')}`,
+                },
+                nest: [
+                  { sel: '.icon-wrapper', decls: { display: 'block', 'flex-shrink': 0, width: iconSize.at('desktop'), height: iconSize.at('desktop') } },
+                  { sel: '.hot-button-icon', decls: { display: 'block', width: '100%', height: '100%', 'object-fit': 'contain' } },
+                  { sel: '.widget-title', decls: { 'overflow-wrap': 'break-word', ...title.base.decls, ...title.base.clamp, transition: '0.3s' } },
+                ],
               },
-              { sel: '.hot-button-title', decls: { 'overflow-wrap': 'break-word', ...title.base.decls, ...title.base.clamp, transition: '0.3s' } },
             ],
           },
+          { sel: '.hot-button.void-link', decls: { cursor: 'default' } },
           {
             sel: hover,
             decls: { 'background-color': '$$hot-button-hover-color' },
-            nest: [{ sel: '.hot-button-title', decls: { color: '$$hot-button-hover-text-color' } }],
+            nest: [{ sel: '.widget-title', decls: { color: '$$hot-button-hover-text-color' } }],
           },
         ],
       },

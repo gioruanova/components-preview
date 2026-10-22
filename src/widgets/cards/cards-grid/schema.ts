@@ -8,17 +8,23 @@ export type CardItem = {
   Title: string
   Description: string
   Image: string
+  Button1Label: string
   Button1URL: string
+  Button2Label: string
   Button2URL: string
 }
 
+export type TitleTag = 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p'
+
 export type CardsConfig = WidthConfig & {
   widgetId: string
+  /** HTML tag of each card title (Saffire "Title Tag" option). */
+  titleTag: TitleTag
+  showImage: boolean
   showDescription: boolean
   button1Show: boolean
-  button1Label: string
   button2Show: boolean
-  button2Label: string
+  showOverlay: boolean
   cardCount: number
   items: CardItem[]
   cardsPerRow: number
@@ -52,47 +58,58 @@ export const newItem = (i: number): CardItem => ({
   Title: `Card ${i + 1}`,
   Description: '',
   Image: `https://picsum.photos/seed/saffire${i + 1}/600/400`,
+  Button1Label: 'More',
   Button1URL: '',
+  Button2Label: 'Buy now',
   Button2URL: '',
 })
 
 // Base styles follow the existing Saffire widget (saffire-docs-poc).
 // Tablet / mobile values are explicit, editable defaults (see the viewport icons on each responsive field).
 export const defaults: CardsConfig = withOverrides<CardsConfig>({
-  widgetId: 'customCards',
+  widgetId: 'cardBlock',
+  titleTag: 'h3',
+  showImage: true,
   showDescription: true,
   button1Show: true,
-  button1Label: 'More',
-  button2Show: false,
-  button2Label: 'Buy now',
+  button2Show: true,
+  showOverlay: true,
   cardCount: 4,
   items: [
     {
       Title: 'Card Title',
       Description: 'Here is a spot for a short description. Keep it brief 1-4 scentences max. Here is a spot for a short description. Keep it brief 1-4 scentences max. Here is a spot for a short description.',
       Image: 'https://picsum.photos/seed/concert/600/400',
+      Button1Label: 'More',
       Button1URL: 'https://example.com/concerts',
+      Button2Label: 'Buy now',
       Button2URL: 'https://example.com/concerts/tickets',
     },
     {
       Title: 'Family Fun Day',
       Description: 'Games, food trucks, and activities for all ages.',
       Image: 'https://picsum.photos/seed/familyday/600/400',
+      Button1Label: 'More',
       Button1URL: 'https://example.com/family-fun-day',
+      Button2Label: 'Buy now',
       Button2URL: '',
     },
     {
       Title: 'VIP Tailgate Experience',
       Description: '',
       Image: 'https://picsum.photos/seed/tailgate/600/400',
+      Button1Label: 'More',
       Button1URL: '',
+      Button2Label: 'Buy now',
       Button2URL: 'https://example.com/vip-tailgate',
     },
     {
       Title: 'Kids Zone',
       Description: 'Face painting, bounce houses, and a petting zoo.',
       Image: 'https://picsum.photos/seed/kidszone/600/400',
+      Button1Label: 'More',
       Button1URL: 'https://example.com/kids-zone',
+      Button2Label: 'Buy now',
       Button2URL: '',
     },
   ],
@@ -124,13 +141,11 @@ export const defaults: CardsConfig = withOverrides<CardsConfig>({
   'titleFont@mobile': typography({ size: 22, weight: 700, lineHeight: 1.5, color: '#ffffff', transform: 'capitalize', clamp: true, lines: 2, fluid: true, minSize: 18 }),
 })
 
-const URL_TIP = "Each card's button renders only when the card has that button's URL (and the button has a label)."
+const URL_TIP = "A card's button renders only when the card has both its label and its URL."
 
 export const schema: Schema<CardsConfig> = {
   // Content = only what the client edits. Show/hide toggles live in Widget configuration.
   content: [
-    { type: 'text', key: 'button1Label', label: 'Button 1 label', tip: URL_TIP, visibleWhen: (c) => c.button1Show },
-    { type: 'text', key: 'button2Label', label: 'Button 2 label', tip: URL_TIP, visibleWhen: (c) => c.button2Show },
     {
       type: 'list',
       key: 'items',
@@ -142,22 +157,39 @@ export const schema: Schema<CardsConfig> = {
         { key: 'Title', label: 'Title', type: 'text' },
         { key: 'Image', label: 'Image URL', type: 'text' },
         { key: 'Description', label: 'Description', type: 'textarea' },
+        { key: 'Button1Label', label: 'Button 1 label', type: 'text', tip: URL_TIP },
         { key: 'Button1URL', label: 'Button 1 URL', type: 'text', tip: URL_TIP },
+        { key: 'Button2Label', label: 'Button 2 label', type: 'text', tip: URL_TIP },
         { key: 'Button2URL', label: 'Button 2 URL', type: 'text', tip: URL_TIP },
       ],
     },
   ],
   widget: [
     { type: 'text', key: 'widgetId', label: 'Widget ID' },
+    {
+      type: 'select',
+      key: 'titleTag',
+      label: 'Title tag',
+      options: [
+        { value: 'h2', label: 'h2' },
+        { value: 'h3', label: 'h3' },
+        { value: 'h4', label: 'h4' },
+        { value: 'h5', label: 'h5' },
+        { value: 'h6', label: 'h6' },
+        { value: 'p', label: 'p' },
+      ],
+    },
     { type: 'stepper', key: 'cardCount', label: 'Number of cards', min: 1, max: MAX_CARDS },
     { type: 'stepper', key: 'cardsPerRow', label: 'Cards per row', min: 1, max: 6, responsive: true },
     {
       type: 'group',
       label: 'Show / hide',
       fields: [
-        { type: 'switch', key: 'showDescription', label: 'Show description', hint: 'On every card' },
-        { type: 'switch', key: 'button1Show', label: 'Show button 1', hint: 'On cards that have a Button 1 URL' },
-        { type: 'switch', key: 'button2Show', label: 'Show button 2', hint: 'On cards that have a Button 2 URL' },
+        { type: 'switch', key: 'showImage', label: 'Show image', hint: 'On cards that have an image' },
+        { type: 'switch', key: 'showDescription', label: 'Show description', hint: 'On cards that have one' },
+        { type: 'switch', key: 'button1Show', label: 'Show button 1', hint: 'On cards with a Button 1 label and URL' },
+        { type: 'switch', key: 'button2Show', label: 'Show button 2', hint: 'On cards with a Button 2 label and URL' },
+        { type: 'switch', key: 'showOverlay', label: 'Show overlay', hint: 'Layer over the image so the text stays readable' },
       ],
     },
   ],
@@ -235,7 +267,7 @@ export const schema: Schema<CardsConfig> = {
           responsive: true,
           tip: 'Cards never get narrower than this: they wrap to the next row instead. 0 = no minimum.',
         },
-        { type: 'color', key: 'cardColor', label: 'Card color', help: 'Title background and hover overlay' },
+        { type: 'color', key: 'cardColor', label: 'Card color', help: 'Card background, title background and overlay' },
         { type: 'slider', key: 'borderWidth', label: 'Border width', min: 0, max: 12, unit: 'px', help: 'Border style: solid' },
         { type: 'color', key: 'borderColor', label: 'Border color', visibleWhen: (c) => c.borderWidth > 0 },
       ],
