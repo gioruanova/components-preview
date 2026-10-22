@@ -5,13 +5,11 @@ import { toCss, toScss } from '@/tooling/stylesheet'
 import { defaults, newItem } from './schema'
 import { styles } from './styles'
 
-const two = { ...defaults, maxItems: 2, itemCount: 2 }
-
 describe('seo-block items and rows', () => {
-  it('shows the selected rows in order, up to Max Items', () => {
-    expect(renderedItems({ ...defaults, maxItems: 1, itemCount: 2 })).toHaveLength(1)
-    expect(renderedItems(two)).toHaveLength(2)
-    expect(renderedItems({ ...two, items: [newItem(0)] })).toHaveLength(2) // missing rows fall back to placeholders
+  it('always shows a single item', () => {
+    expect(renderedItems(defaults)).toHaveLength(1)
+    expect(renderedItems({ ...defaults, itemCount: 3, items: [newItem(0), newItem(1)] })).toHaveLength(1)
+    expect(renderedItems({ ...defaults, items: [] })).toHaveLength(1) // a missing item falls back to a placeholder
   })
 
   it('is empty (renders nothing) when no row has a selected item', () => {
@@ -22,10 +20,10 @@ describe('seo-block items and rows', () => {
     expect(toData(empty)).toMatchObject({ hasData: false, items: [] })
   })
 
-  it('repeats the item parts per row inside .seoBlock-container > #{WidgetId} (no item wrapper)', () => {
-    const html = toHtml(two)
+  it('renders the item parts inside .seoBlock-container > #{WidgetId} (no item wrapper)', () => {
+    const html = toHtml(defaults)
     expect(html).toMatch(/<div class="seoBlock-container">\s*<div id="seoBlock">/)
-    expect(html).toContain('repeat once per row with a selected item (2)')
+    expect(html).toContain('of the single item')
     expect(html).not.toContain('seo-block-item')
   })
 })
@@ -54,12 +52,11 @@ describe('seo-block title', () => {
     expect(toHtml({ ...defaults, showTitleLine1: false, showTitleLine2: false })).not.toContain('seo-title')
   })
 
-  it('uses the Title Heading for the first item and one level lower after it', () => {
-    expect(titleTagOf({ ...defaults, headingLevel: 'h1' }, 0)).toBe('h1')
-    expect(titleTagOf({ ...defaults, headingLevel: 'h1' }, 1)).toBe('h2')
-    expect(titleTagOf({ ...defaults, headingLevel: 'h3' }, 2)).toBe('h4')
-    expect(titleTagOf({ ...defaults, headingLevel: 'h6' }, 1)).toBe('h6')
-    expect(renderedItems({ ...two, headingLevel: 'h2' }).map((i) => i.titleTag)).toEqual(['h2', 'h3'])
+  it('uses the Title Heading as the title tag', () => {
+    expect(titleTagOf({ ...defaults, headingLevel: 'h1' })).toBe('h1')
+    expect(titleTagOf({ ...defaults, headingLevel: 'h3' })).toBe('h3')
+    expect(renderedItems({ ...defaults, headingLevel: 'h2' }).map((i) => i.titleTag)).toEqual(['h2'])
+    expect(toHtml({ ...defaults, headingLevel: 'h2' })).toContain('<h2 class="seo-title"')
   })
 })
 

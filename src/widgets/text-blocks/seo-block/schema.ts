@@ -33,8 +33,7 @@ export type SeoBlockConfig = WidthConfig & {
   showDescription: boolean
   button1Show: boolean
   button2Show: boolean
-  // B · SEO Block Module (admin, Widgets → Seo Widget → Data Sources → Create / Edit Module)
-  maxItems: number
+  // B · SEO Block Module (admin, Widgets → Seo Widget → Data Sources → Create / Edit Module). Always 1 item.
   itemCount: number
   titleLine1Enabled: boolean
   titleLine2Enabled: boolean
@@ -59,7 +58,8 @@ export type SeoBlockConfig = WidthConfig & {
   button2Style: ButtonStyle
 }
 
-export const MAX_ITEMS = 10
+/** The block always shows one item (maxItemsCap 1 in Saffire): one heading per placement. */
+export const MAX_ITEMS = 1
 
 export const newItem = (i: number): SeoBlockItem => ({
   TitleLine1: i === 0 ? 'Search Engine' : `Item ${i + 1} title`,
@@ -77,7 +77,7 @@ export const newItem = (i: number): SeoBlockItem => ({
 // Base styles follow the existing Saffire widget (saffire-docs-poc).
 // Tablet / mobile values are explicit, editable defaults (see the viewport icons on each responsive field).
 export const defaults: SeoBlockConfig = withOverrides<SeoBlockConfig>({
-  items: [newItem(0), newItem(1)],
+  items: [newItem(0)],
   widgetId: 'seoBlock',
   headingLevel: 'h1',
   showTitleLine1: true,
@@ -86,7 +86,6 @@ export const defaults: SeoBlockConfig = withOverrides<SeoBlockConfig>({
   showDescription: true,
   button1Show: true,
   button2Show: true,
-  maxItems: 1,
   itemCount: 1,
   titleLine1Enabled: true,
   titleLine2Enabled: true,
@@ -134,10 +133,10 @@ export const schema: Schema<SeoBlockConfig> = {
     {
       type: 'list',
       key: 'items',
-      label: 'Items (Manage Items)',
+      label: 'Item (Manage Items)',
       countKey: 'itemCount',
-      tip: 'The client creates items in "Manage Items" and picks them in the tab rows (dropdown, or "Select (empty)"). Rows are shown in order, up to Max Items.',
-      itemLabel: (i) => `Row ${i + 1} · item`,
+      tip: 'The client creates items in "Manage Items" and picks one in the tab row (dropdown, or "Select (empty)"). The block always shows one item.',
+      itemLabel: () => 'Row 1 · item',
       newItem,
       itemFields: [
         { key: 'TitleLine1', label: 'Title Line 1', type: 'text', tip: 'Required by default (module setting). Max length: module "Title 1 Max Length" (default 255).' },
@@ -167,7 +166,7 @@ export const schema: Schema<SeoBlockConfig> = {
       key: 'headingLevel',
       label: 'Title Heading',
       options: heading,
-      help: 'First item uses this tag; next items one level lower (one h1 per page)',
+      help: 'Heading tag of the title (the block has one item, so one heading)',
     },
     {
       type: 'group',
@@ -185,8 +184,7 @@ export const schema: Schema<SeoBlockConfig> = {
       type: 'group',
       label: 'SEO Block Module (admin · data source)',
       fields: [
-        { type: 'stepper', key: 'maxItems', label: 'Max Items', min: 1, max: MAX_ITEMS, tip: 'Rows the module tab allows (default 1). Only these many items are shown.' },
-        { type: 'stepper', key: 'itemCount', label: 'Rows with an item selected', min: 0, max: MAX_ITEMS, tip: 'Simulates the tab rows: 0 = no item selected → the widget renders nothing.' },
+        { type: 'stepper', key: 'itemCount', label: 'Row with an item selected', min: 0, max: MAX_ITEMS, tip: 'Simulates the tab row: 0 = no item selected → the widget renders nothing. The module has no Max Items (always 1).' },
         { type: 'switch', key: 'titleLine1Enabled', label: 'Title Line 1 enabled', hint: 'Disabled = not editable and not rendered' },
         { type: 'switch', key: 'titleLine2Enabled', label: 'Title Line 2 enabled' },
         { type: 'switch', key: 'descriptionEnabled', label: 'Description enabled' },

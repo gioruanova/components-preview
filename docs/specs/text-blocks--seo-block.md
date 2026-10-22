@@ -9,15 +9,15 @@
 - **Order in category:** 10
 
 ## 2. Functional description
-- Renders one or more **items**. Each item has a title (one or two lines), an optional divider, description paragraphs and up to two buttons.
+- Renders a single **item** (always one: the module has no Max Items, so the page gets one heading per placement). The item has a title (one or two lines), an optional divider, description paragraphs and up to two buttons.
 - Rendered **on the server** from a template, so the heading is in the page HTML (SEO). A JS callback runs once the DOM is ready.
 - Three roles, three places:
 
 | Who | Where (Spark) | What |
 |---|---|---|
-| Admin | Widgets → Seo Widget → Data Sources → Add / Edit (+ Create / Edit Module) | Data source and its **SEO Block Module**: tab name, display rank, Max Items, which fields exist, required fields, limits, number of buttons |
+| Admin | Widgets → Seo Widget → Data Sources → Add / Edit (+ Create / Edit Module) | Data source and its **SEO Block Module**: tab name, display rank, which fields exist, required fields, limits, number of buttons |
 | Spark user | Widgets → Add / Edit Widget → "Seo Widget" | Data source, **Widget Id**, **Title Heading**, Show / hide toggles, **HTML template** (code editor) |
-| Client | Homepage Features → module tab | **Items** (Manage Items) and which item fills each **row** |
+| Client | Homepage Features → module tab | **Items** (Manage Items) and which item fills the **row** |
 
 ## 3. Real markup (default template, editable per placement)
 ```html
@@ -68,7 +68,7 @@ In the simulator the buttons get `button button-N` so the per-button styles appl
 | `{WidgetId}` | Widget Id option, or `seoBlock-{placement id}` |
 | `{TitleLine1}` / `{TitleLine2}` | Title lines (HTML-encoded) |
 | `{TitleText}` | The only title line shown (use inside `{#ShowSingleTitleLine}`) |
-| `{TitleTag}` | `h1`…`h6` for this item |
+| `{TitleTag}` | `h1`…`h6` (Title Heading) |
 | `{TitleTagStart}` / `{TitleTagEnd}` | `<h1` / `</h1>` (lets the code editor accept a dynamic heading) |
 | `{TitleAriaLabelAttribute}` | ` aria-label="Line 1 Line 2"` only with two lines, empty otherwise |
 | `{TitleAriaLabel}` | Title text only |
@@ -104,7 +104,7 @@ Fields disabled in the module come as `null` (labels) / `""` (URLs). Placement s
 ### A · Content (client — Homepage Features → module tab)
 | Label | Key | Field type | Rules |
 |---|---|---|---|
-| Items (Manage Items) | items | list (count: rows with an item selected) | Created in "Manage Items"; each tab row picks one (dropdown) or "Select (empty)" |
+| Item (Manage Items) | items | list (count: row with an item selected, 0–1) | Created in "Manage Items"; the tab row picks one (dropdown) or "Select (empty)" |
 | Title Line 1 | TitleLine1 | text | Required by default; max length = module "Title 1 Max Length" |
 | Title Line 2 | TitleLine2 | text | Optional by default; max length = module "Title 2 Max Length" |
 | Description · paragraphs | Description | textarea (one paragraph per line) | Spark: "+ Add paragraph", Move up / down, Remove; plain text; up to "Paragraphs Limit", each up to "Paragraph Max Length" |
@@ -119,7 +119,7 @@ Placement options (Spark → Add / Edit Widget → Component Options):
 | Label | Key | Field type | Default | Rules |
 |---|---|---|---|---|
 | Widget Id | widgetId | text | (empty → `seoBlock-{placement id}`) | `^[A-Za-z][\w-]*$`, otherwise the fallback is used |
-| Title Heading | headingLevel | select | h1 | h1–h6; first item uses it, next items one level lower (capped at h6) |
+| Title Heading | headingLevel | select | h1 | h1–h6; tag of the title (single item, single heading) |
 | Show Title Line 1 / 2 · Divider · Description · Button 1 / 2 | showTitleLine1, showTitleLine2, showDivider, showDescription, button1Show, button2Show | switches | all on | Checkbox + text, one per row |
 
 SEO Block Module (admin — Data Sources → Create / Edit Module, generic module editor):
@@ -128,8 +128,8 @@ SEO Block Module (admin — Data Sources → Create / Edit Module, generic modul
 |---|---|---|---|
 | Name | — | — | Required; tab name in Homepage Features |
 | Display Rank | — | last | Order of the tab |
-| Max Items | maxItems | 1 | 1–12; rows the tab allows = items shown |
-| (Rows with an item selected) | itemCount | 1 | Simulator only: 0 = empty widget |
+| (no Max Items) | — | 1 | Fixed: `maxItemsCap` 1 in the master config hides Max Items in the module editor |
+| (Row with an item selected) | itemCount | 1 | Simulator only: 0 = empty widget, max 1 |
 | Title Line 1 / 2 → Enabled · Required · Max Length | titleLine1Enabled, titleLine2Enabled | on / on · on / off · 255 / 255 | Required ⇒ enabled; disabled fields are hidden in the editor and not rendered |
 | Description → Enabled · Required · Max Length · Limit | descriptionEnabled, paragraphLimit | on · off · 1000 · 5 | Required ⇒ at least one paragraph |
 | Button 1 / 2 → Enabled · Required · Label Max Length | buttonCount | on · off · 50 | The simulator's "Number of buttons" = how many are enabled |
@@ -151,10 +151,10 @@ Data source (admin): Configurator `Saffire.Events.BLL.Website.Widgets.ComponentW
 No wrapper spacing of its own (`wrapperSpacing: false`): the Spark widget container provides it.
 
 ## 7. Rendering rules
-- Items shown: the tab rows with a selected item, in row order, up to Max Items. Empty rows are skipped.
+- Item shown: the tab row's selected item (always one; modules saved earlier with more items follow the cap of 1).
 - A title line renders when the module enables it, the placement shows it and it has text.
 - Two lines: `<span>` per line + `aria-label`. One line: text straight in the heading, no span, no `aria-label`. No line: no heading.
-- Heading: Title Heading for the first item; next items one level lower (h1 → h2), capped at h6.
+- Heading: the Title Heading. No derived levels (a future Text Block can allow several items with a fixed heading).
 - Divider: placement "Show Divider" only (it renders even without a title).
 - Description: module enabled + placement shown + at least one paragraph; one `<p>` per paragraph (line breaks inside a paragraph → `<br />`), up to the Paragraphs Limit.
 - Button N: N ≤ Number of Buttons, placement shown, label set (Spark guarantees the URL). The buttons container is omitted when no button renders.
